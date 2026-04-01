@@ -1,0 +1,864 @@
+Kaizen — Continuous Learning Platform for IELTS & PTE Preparation
+1. Introduction
+
+Kaizen is an AI-powered web platform designed to help students prepare for IELTS and PTE English proficiency examinations through structured practice, intelligent feedback, and continuous learning improvement.
+
+The term Kaizen originates from Japanese philosophy and means continuous improvement. The platform embodies this philosophy by enabling learners to improve their language skills gradually through repeated practice, feedback, and progress tracking.
+
+Kaizen integrates modern web technologies, artificial intelligence APIs, and responsive design to create an efficient learning environment. The platform allows users to practice all core exam components including reading, listening, writing, and speaking, while also providing vocabulary learning tools, flashcards, summarization exercises, and realistic mock tests.
+
+The system is designed to be fully responsive, ensuring accessibility across mobile devices, tablets, laptops, and desktop computers. Performance optimization and SEO best practices are incorporated to achieve high Lighthouse scores.
+
+2. Objectives
+
+The main objectives of the Kaizen platform are:
+
+Provide a centralized platform for IELTS and PTE exam preparation
+Enable continuous language learning through structured practice modules
+Provide AI-powered feedback for speaking and writing tasks
+Track user progress and performance analytics
+Create a responsive and high-performance web application
+Offer realistic mock test environments similar to official exams
+
+3. Key Design Principles
+
+Kaizen follows several important design principles:
+
+Continuous Learning Philosophy
+
+The system is built around the idea that consistent practice and feedback lead to improvement over time.
+
+Responsive Design
+
+The platform supports seamless usage across all devices including mobile phones, tablets, and desktop computers.
+
+High Performance
+
+Optimized architecture ensures fast loading times and strong Lighthouse scores.
+
+AI-Assisted Feedback
+
+Artificial intelligence models analyze user responses to provide meaningful feedback.
+
+Scalable Architecture
+
+The application structure allows future expansion and feature additions.
+
+Secure Data Handling
+
+User data and authentication are protected through secure authentication and encrypted communication.
+
+4. System Architecture Overview
+
+The Kaizen platform follows a modern full-stack architecture.
+
+Frontend (React + TypeScript)
+        ↓
+API Layer (Node.js + Express)
+        ↓
+Database (MongoDB Atlas)
+        ↓
+AI Services (Groq API + Whisper)
+        ↓
+Storage (AWS S3 / Cloudflare R2)
+
+The frontend communicates with backend APIs, which handle business logic, authentication, and database interactions. AI services are used to evaluate speech and writing responses.
+
+5. Technology Stack
+Frontende frontend is responsible for user interface design and interaction.
+
+Framework
+React
+
+Language
+TypeScript
+
+Build Tool
+Vite
+
+UI Component Library
+shadcn/ui
+
+Styling Framework
+Tailwind CSS
+
+Icons
+react-icons
+
+Routing
+React Router
+
+Forms
+React Hook Form
+
+Validation
+Zod
+
+State Management
+Zustand
+
+Server State Management
+TanStack Query
+
+Charts and Analytics
+Recharts
+
+SEO Management
+React Helmet
+
+authentication
+better auth
+
+Backend
+
+The backend handles API routing, business logic, and communication with the database and AI services.
+
+Runtime Environment
+Node.js
+
+Framework
+Express.js
+
+Language
+TypeScript
+
+Responsibilities include:
+
+API endpoint handling
+Authentication processing
+Data validation and storage
+AI service communication
+User progress management
+
+6. Authentication System
+
+Kaizen uses Better Auth for secure user authentication.
+
+Features include:
+
+User signup and login
+Session management
+Secure HTTP-only cookies
+Optional OAuth authentication
+
+Authentication ensures that user progress, scores, and personal data remain protected.
+
+7. Database Design
+
+The platform uses MongoDB Atlas, a scalable cloud-based NoSQL database.
+
+Database libraries:
+ Mongoose atlas
+
+.
+
+---
+Project Structure
+kaizen/
+│
+├── client/                 # React frontend
+│
+├── server/                 # Node.js backend
+│
+├── shared/                 # shared types/interfaces
+│
+├── docker/                 # docker configs
+│
+├── docs/                   # documentation
+│
+├── .env
+├── package.json
+└── README.md
+Frontend Structure
+client/
+│
+├── public/
+│
+├── src/
+│
+│   ├── components/        # reusable UI components
+│   │   ├── ui/            # shadcn components
+│   │   ├── layout/
+│   │   └── common/
+│
+│   ├── pages/             # application pages
+│   │   ├── home/
+│   │   ├── dashboard/
+│   │   ├── vocabulary/
+│   │   ├── reading/
+│   │   ├── listening/
+│   │   ├── speaking/
+│   │   ├── writing/
+│   │   └── mock-tests/
+│
+│   ├── features/          # feature-based modules
+│   │   ├── auth/
+│   │   ├── vocabulary/
+│   │   ├── flashcards/
+│   │   ├── reading/
+│   │   ├── listening/
+│   │   ├── speaking/
+│   │   ├── writing/
+│   │   └── analytics/
+│
+│   ├── hooks/             # custom hooks
+│
+│   ├── services/          # API requests
+│   │   ├── api.ts
+│   │   ├── auth.service.ts
+│   │   ├── ai.service.ts
+│   │   └── practice.service.ts
+│
+│   ├── store/             # Zustand stores
+│
+│   ├── utils/             # helper functions
+│
+│   ├── types/             # TypeScript types
+│
+│   ├── routes/            # React Router setup
+│
+│   ├── styles/
+│
+│   ├── App.tsx
+│   └── main.tsx
+│
+├── tailwind.config.ts
+├── vite.config.ts
+└── tsconfig.json
+Backend Structure
+server/
+│
+├── src/
+│
+│   ├── config/
+│   │   ├── database.ts
+│   │   ├── env.ts
+│   │   └── groq.ts
+│
+│   ├── controllers/
+│   │   ├── auth.controller.ts
+│   │   ├── vocabulary.controller.ts
+│   │   ├── reading.controller.ts
+│   │   ├── listening.controller.ts
+│   │   ├── speaking.controller.ts
+│   │   ├── writing.controller.ts
+│   │   └── mocktest.controller.ts
+│
+│   ├── routes/
+│   │   ├── auth.routes.ts
+│   │   ├── vocabulary.routes.ts
+│   │   ├── reading.routes.ts
+│   │   ├── listening.routes.ts
+│   │   ├── speaking.routes.ts
+│   │   ├── writing.routes.ts
+│   │   └── mocktest.routes.ts
+│
+│   ├── models/
+│   │   ├── user.model.ts
+│   │   ├── vocabulary.model.ts
+│   │   ├── reading.model.ts
+│   │   ├── question.model.ts
+│   │   ├── listening.model.ts
+│   │   ├── writing.model.ts
+│   │   ├── speaking.model.ts
+│   │   └── progress.model.ts
+│
+│   ├── services/
+│   │   ├── ai.service.ts
+│   │   ├── vocabulary.service.ts
+│   │   ├── reading.service.ts
+│   │   └── progress.service.ts
+│
+│   ├── middleware/
+│   │   ├── auth.middleware.ts
+│   │   ├── error.middleware.ts
+│   │   └── rateLimit.middleware.ts
+│
+│   ├── utils/
+│   │   ├── logger.ts
+│   │   └── helpers.ts
+│
+│   ├── types/
+│
+│   ├── app.ts
+│   └── server.ts
+│
+├── package.json
+└── tsconfig.json
+Database Schema
+Users
+User
+_id
+name
+email
+password
+createdAt
+updatedAt
+Vocabulary
+Vocabulary
+_id
+word
+meaning
+example
+difficulty
+pronunciation
+ReadingPassage
+ReadingPassage
+_id
+title
+content
+difficulty
+Question
+Question
+_id
+passageId
+question
+options[]
+correctAnswer
+Listening
+Listening
+_id
+title
+audioUrl
+questions[]
+WritingSubmission
+WritingSubmission
+_id
+userId
+essayText
+aiScore
+feedback
+createdAt
+SpeakingSubmission
+SpeakingSubmission
+_id
+userId
+audioUrl
+transcript
+aiScore
+feedback
+MockTest
+MockTest
+_id
+userId
+readingScore
+listeningScore
+writingScore
+speakingScore
+date
+UserProgress
+UserProgress
+_id
+userId
+vocabularyLearned
+readingAccuracy
+listeningAccuracy
+writingAverageScore
+speakingAverageScore
+API Endpoint Design
+Authentication
+POST /api/auth/signup
+POST /api/auth/login
+POST /api/auth/logout
+GET  /api/auth/me
+Vocabulary
+GET /api/vocabulary
+GET /api/vocabulary/:id
+POST /api/vocabulary
+Reading
+GET /api/reading
+POST /api/reading/submit
+Listening
+GET /api/listening
+POST /api/listening/submit
+Writing
+POST /api/writing/evaluate
+Speaking
+POST /api/speaking/analyze
+Mock Tests
+GET /api/mock-tests
+POST /api/mock-tests/submit
+AI Service Example
+User submits essay
+        ↓
+Backend receives essay
+        ↓
+Groq API analyzes essay
+        ↓
+Returns score + feedback
+        ↓
+Saved to database
+        ↓
+Returned to frontend
+Development Roadmap
+Phase 1
+
+Authentication
+Basic UI
+Database setup
+
+Phase 2
+
+Vocabulary module
+Flashcards
+Reading practice
+
+Phase 3
+
+Listening module
+Mock test system
+
+Phase 4
+
+AI writing evaluation
+AI speaking evaluation
+
+Lighthouse Optimization
+
+Use
+
+Lazy loading
+Code splitting
+Optimized images
+Semantic HTML
+Accessibility attributes
+
+These practices help achieve Lighthouse scores between 90–100.
+
+SEO Strategy
+
+Since the platform targets IELTS and PTE exam preparation, including these keywords in meta descriptions, page titles, and structured content improves search visibility.
+
+Example
+
+Meta Description:
+Kaizen — AI-powered IELTS and PTE preparation platform with speaking evaluation, writing feedback, and mock tests.
+
+You may also use exam-focused subdomains such as
+
+ielts.kaizen.ai
+pte.kaizen.ai
+
+to improve search engine ranking.
+
+
+
+
+
+
+Overview
+Build a complete, production-ready SaaS frontend for Kaizen, an AI-powered language exam preparation platform. The design will follow modern SaaS aesthetics inspired by OpenAI, Vercel AI SDK, and Braintrust - featuring a dark theme with indigo/violet accents, glassmorphism elements, and clean typography.
+Design System
+Color Theme (Indigo/Violet)
+
+Primary: Indigo (oklch(0.585 0.233 277)) - Main interactive elements
+Secondary: Violet (oklch(0.606 0.25 292)) - Accent highlights
+Background: Deep dark (oklch(0.13 0.02 280)) - Dark mode default
+Cards: Subtle dark with glassmorphism (oklch(0.18 0.02 280))
+Success: Green for positive feedback
+Accent gradients: Indigo-to-violet gradients for hero sections and CTAs
+
+Typography & Layout
+
+Geist font family (already configured)
+Collapsible sidebar with icon + text navigation
+Top bar with search, notifications, dark mode toggle, user avatar
+Rounded cards (0.75rem radius), soft shadows, smooth transitions
+Responsive: mobile hamburger menu, tablet/desktop sidebar
+
+File Structure
+/app
+  ├── (marketing)/           # Public pages (landing, auth)
+  │   ├── page.tsx           # Landing page
+  │   ├── login/page.tsx     # Login
+  │   ├── signup/page.tsx    # Signup with OTP verification
+  │   └── layout.tsx         # Marketing layout (no sidebar)
+  │
+  ├── (app)/                  # Protected app pages
+  │   ├── layout.tsx          # App layout with sidebar + topbar
+  │   ├── dashboard/page.tsx
+  │   ├── vocabulary/page.tsx
+  │   ├── listening/page.tsx
+  │   ├── reading/page.tsx
+  │   ├── writing/page.tsx
+  │   ├── speaking/page.tsx
+  │   ├── mocktest/page.tsx
+  │   ├── analytics/page.tsx
+  │   ├── ai/page.tsx
+  │   ├── profile/page.tsx
+  │   └── settings/page.tsx
+  │
+  ├── globals.css             # Updated theme with indigo/violet
+  └── layout.tsx              # Root layout with theme provider
+
+/components
+  ├── layout/
+  │   ├── app-sidebar.tsx     # Collapsible sidebar
+  │   ├── app-topbar.tsx      # Top navigation bar
+  │   └── marketing-header.tsx # Landing page header
+  │
+  ├── landing/
+  │   ├── hero-section.tsx
+  │   ├── features-section.tsx
+  │   ├── modules-section.tsx
+  │   ├── testimonials-section.tsx
+  │   ├── pricing-section.tsx
+  │   └── footer.tsx
+  │
+  ├── auth/
+  │   ├── login-form.tsx
+  │   ├── signup-form.tsx
+  │   ├── otp-verification.tsx
+  │   └── social-auth-buttons.tsx
+  │
+  ├── dashboard/
+  │   ├── welcome-card.tsx
+  │   ├── streak-card.tsx
+  │   ├── stats-cards.tsx
+  │   ├── recent-activity.tsx
+  │   └── progress-charts.tsx
+  │
+  ├── vocabulary/
+  │   ├── flashcard.tsx
+  │   ├── word-card.tsx
+  │   ├── exercise-types/
+  │   │   ├── fill-blanks.tsx
+  │   │   ├── drag-drop.tsx
+  │   │   ├── listening-fill.tsx
+  │   │   └── write-dictation.tsx
+  │   └── progress-tracker.tsx
+  │
+  ├── listening/
+  │   ├── audio-player.tsx
+  │   ├── waveform-visualizer.tsx
+  │   ├── question-types/
+  │   │   ├── multiple-choice.tsx
+  │   │   ├── fill-blanks.tsx
+  │   │   └── note-completion.tsx
+  │   └── timer.tsx
+  │
+  ├── reading/
+  │   ├── passage-viewer.tsx
+  │   ├── question-panel.tsx
+  │   ├── highlight-tool.tsx
+  │   └── scroll-sync.tsx
+  │
+  ├── writing/
+  │   ├── essay-editor.tsx
+  │   ├── word-counter.tsx
+  │   ├── grammar-suggestions.tsx
+  │   ├── ai-scoring-panel.tsx
+  │   └── task-selector.tsx
+  │
+  ├── speaking/
+  │   ├── microphone-recorder.tsx
+  │   ├── audio-playback.tsx
+  │   ├── recording-timer.tsx
+  │   ├── prompt-card.tsx
+  │   └── feedback-panel.tsx
+  │
+  ├── mocktest/
+  │   ├── section-navigation.tsx
+  │   ├── exam-timer.tsx
+  │   ├── section-progress.tsx
+  │   └── score-report.tsx
+  │
+  ├── analytics/
+  │   ├── skill-improvement-chart.tsx
+  │   ├── practice-streak-chart.tsx
+  │   ├── vocabulary-growth-chart.tsx
+  │   └── stats-overview.tsx
+  │
+  ├── ai-assistant/
+  │   ├── chat-interface.tsx
+  │   ├── message-bubble.tsx
+  │   └── suggestion-chips.tsx
+  │
+  └── profile/
+      ├── profile-form.tsx
+      ├── avatar-upload.tsx
+      └── learning-goals.tsx
+
+/lib
+  ├── mock-data/              # Mock data for demo
+  │   ├── user.ts
+  │   ├── vocabulary.ts
+  │   ├── listening.ts
+  │   ├── reading.ts
+  │   ├── writing.ts
+  │   ├── speaking.ts
+  │   ├── analytics.ts
+  │   └── mocktest.ts
+  │
+  ├── stores/                 # State management (Zustand)
+  │   ├── auth-store.ts
+  │   ├── user-store.ts
+  │   ├── progress-store.ts
+  │   └── settings-store.ts
+  │
+  └── utils.ts                # Existing utility functions
+
+Pages Implementation
+1. Landing Page (/)
+
+Hero section with gradient background, animated elements
+Feature cards with icons (Vocabulary, Listening, Reading, Writing, Speaking)
+Learning modules overview with visual cards
+Testimonials carousel
+Pricing plans (Free, Pro, Enterprise)
+CTA section with signup prompt
+Footer with links
+
+2. Authentication Pages
+Login (/login)
+
+Email/password fields with React Hook Form + Zod validation
+Remember me checkbox
+Forgot password link
+Social login buttons (Google, GitHub)
+OTP login options (email/phone)
+Animated card layout
+
+Signup (/signup)
+
+Multi-step form:
+
+Basic info (name, email, phone, password)
+OTP verification (6-digit input)
+Profile setup (target exam, band score, country)
+
+
+Social signup options
+Progress indicator
+
+3. Dashboard (/dashboard)
+
+Welcome card with user greeting and daily goal
+Learning streak display (flame icon + count)
+Stats cards grid:
+
+Vocabulary learned (count + trend)
+Listening accuracy (% + chart)
+Reading accuracy (% + chart)
+Writing score (band score)
+Speaking score (band score)
+
+
+Weekly study activity chart (bar chart)
+Skill improvement chart (radar/line chart)
+Recent activity list
+
+4. Vocabulary Page (/vocabulary)
+
+Flashcard carousel with flip animation
+Word cards showing:
+
+Word, phonetic, part of speech
+Definition, example sentences
+Audio pronunciation button
+
+
+Exercise types tabs:
+
+Fill in blanks
+Drag and drop matching
+Listening fill blanks
+Write from dictation
+
+
+Progress tracking sidebar
+
+5. Listening Page (/listening)
+
+Audio player with:
+
+Play/pause, seek, volume
+Playback speed control
+Waveform visualizer
+
+
+Timer display
+Question types:
+
+Multiple choice
+Fill blanks
+Note completion
+
+
+Auto-scoring on submission
+
+6. Reading Page (/reading)
+
+Split layout:
+
+Left: Reading passage with highlight tool
+Right: Questions panel
+
+
+Scroll sync between passage and questions
+Question navigation dots
+Timer and progress indicator
+
+7. Writing Page (/writing)
+
+Task selector (Task 1 / Task 2)
+Rich text editor:
+
+Basic formatting
+Word counter (live)
+Timer
+
+
+AI-powered features:
+
+Grammar suggestions (highlighted)
+Vocabulary suggestions
+AI scoring panel (band score + criteria breakdown)
+
+
+
+8. Speaking Page (/speaking)
+
+Prompt card showing current task:
+
+Read aloud
+Repeat sentence
+Describe image
+
+
+Microphone recorder:
+
+Recording button with animation
+Timer display
+Waveform while recording
+
+
+Audio playback of recording
+Feedback panel:
+
+Pronunciation score
+Fluency score
+AI suggestions
+
+
+
+9. Mock Test Page (/mocktest)
+
+Section navigation tabs (Listening, Reading, Writing, Speaking)
+Exam timer (countdown)
+Section progress indicators
+Full exam simulation
+Final score report:
+
+Overall band score
+Section breakdowns
+Detailed feedback
+
+
+
+10. Analytics Page (/analytics)
+
+Overview stats cards
+Skill improvement line chart (over time)
+Practice streak calendar/heatmap
+Vocabulary growth chart
+Time spent per skill pie chart
+Comparison with target score
+
+11. AI Assistant Page (/ai)
+
+Chat interface:
+
+Message bubbles (user/AI)
+Typing indicator
+Message input with send button
+
+
+Quick suggestion chips:
+
+Grammar help
+Essay correction
+Speaking tips
+IELTS strategies
+
+
+Conversation history sidebar
+
+12. Profile Page (/profile)
+
+Profile picture upload
+Editable fields:
+
+Name, email, phone
+Country
+Target exam (IELTS/PTE)
+Target band score
+Bio
+
+
+Learning goals section
+Study preferences
+Account security link
+
+13. Settings Page (/settings)
+
+Account settings section
+Password change form
+Notification preferences (toggles)
+Privacy settings
+Dark mode toggle
+Language preference
+Danger zone (delete account)
+
+Mock Data Strategy
+All pages will have comprehensive mock data to demonstrate full functionality:
+
+User profile with progress history
+Vocabulary words with definitions, examples, audio URLs
+Listening exercises with audio files (placeholder URLs)
+Reading passages with questions
+Writing prompts and sample essays
+Speaking prompts
+Analytics data with historical trends
+Chat history for AI assistant
+
+Key Technical Decisions
+
+Next.js App Router - Using route groups for marketing vs app sections
+Zustand - Add for client-side state (auth, user preferences)
+React Hook Form + Zod - Form validation (already in dependencies)
+Recharts - Charts and visualizations (already in dependencies)
+shadcn/ui - All UI components (comprehensive set available)
+Theme - Update globals.css with indigo/violet color scheme
+
+Implementation Order
+
+Update globals.css with new indigo/violet theme
+Create layout components (sidebar, topbar, marketing header)
+Build landing page with all sections
+Implement authentication pages
+Create app layout with sidebar
+Build dashboard with charts
+Implement learning modules (vocabulary, listening, reading, writing, speaking)
+Create mock test page
+Build analytics page
+Implement AI assistant chat
+Add profile and settings pages
+Create mock data files
+Wire up state management
+
+Responsive Breakpoints
+
+Mobile: < 768px (hamburger menu, stacked layouts)
+Tablet: 768px - 1024px (collapsible sidebar)
+Desktop: > 1024px (full sidebar)
+
+Animations & Interactions
+
+Page transitions (fade-in)
+Card hover effects (scale, shadow)
+Button interactions (press states)
+Flashcard flip animation
+Recording pulse animation
+Chart animations on load
+Smooth scroll behaviors
