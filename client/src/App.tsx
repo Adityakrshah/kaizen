@@ -1,3 +1,5 @@
+import { MockTest } from "./pages/MockTest";
+import MockTestResult from "./pages/MockTestResult";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "./components/theme-provider";
 import { Landing } from "./pages/Landing";
@@ -11,7 +13,7 @@ import { Reading } from "./pages/Reading";
 import { Writing } from "./pages/Writing";
 import { Vocabulary } from "./pages/Vocabulary";
 import { Settings } from "./pages/Settings";
-import { MockTest } from "./pages/MockTest";
+
 // import { Analytics } from "./pages/Analytics";
 
 // 🚀 Import the Bouncer!
@@ -40,6 +42,8 @@ function App() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/profile" element={<Settings />} />
               <Route path="/mocktest" element={<MockTest />} />
+              <Route path="/mocktest" element={<MockTest />} />
+              <Route path="/mocktest/result/:id" element={<MockTestResult />} />
             </Route>
           </Route>
         </Routes>

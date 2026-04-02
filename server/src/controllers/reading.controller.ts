@@ -36,9 +36,33 @@ export const getReadingPassageById = async (req: Request, res: Response) => {
   }
 };
 
+// export const submitReadingAnswers = async (req: Request, res: Response) => {
+//   try {
+//     const result = await evaluateReadingAnswers(
+//       req.body.passageId,
+//       req.body.answers
+//     );
+
+//     if (!result) {
+//       return res.status(404).json({ message: "Passage not found" });
+//     }
+
+//     res.json({ success: true, ...result });
+//   } catch {
+//     res.status(500).json({ message: "Failed to evaluate answers" });
+//   }
+// };
 export const submitReadingAnswers = async (req: Request, res: Response) => {
   try {
+    // 1. Get the session to know WHO is taking the test
+    const session = await auth.api.getSession({ headers: req.headers as any });
+    if (!session?.user) {
+      return res.status(401).json({ message: "Unauthorized: You must be logged in to save results." });
+    }
+
+    // 2. Pass the userId into the service
     const result = await evaluateReadingAnswers(
+      session.user.id,
       req.body.passageId,
       req.body.answers
     );
@@ -48,11 +72,11 @@ export const submitReadingAnswers = async (req: Request, res: Response) => {
     }
 
     res.json({ success: true, ...result });
-  } catch {
-    res.status(500).json({ message: "Failed to evaluate answers" });
+  } catch (error) {
+    console.error("Evaluation Error:", error);
+    res.status(500).json({ message: "Failed to evaluate answers and save result" });
   }
 };
-
 export const generateReading = async (req: Request, res: Response) => {
   try {
     const session = await auth.api.getSession({ headers: req.headers as any });

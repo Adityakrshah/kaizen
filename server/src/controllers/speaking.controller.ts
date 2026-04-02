@@ -78,23 +78,28 @@ export const fetchRandomSpeakingPrompt = async (
 
 import { getSpeakingHistory } from "../services/speaking.service"
 
+// Replace your existing fetchSpeakingHistory with this:
 export const fetchSpeakingHistory = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const page = Number(req.query.page) || 1
-    const limit = Number(req.query.limit) || 10
+    // 🚀 Require authentication to view history
+    const session = await auth.api.getSession({ headers: req.headers as any });
+    if (!session?.user) return res.status(401).json({ message: "Unauthorized" });
 
-    const history = await getSpeakingHistory(page, limit)
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+
+    const history = await getSpeakingHistory(session.user.id, page, limit);
 
     res.json({
       success: true,
       message: "Speaking history fetched successfully",
       data: history
-    })
+    });
   } catch (error) {
-    next(error)
+    next(error);
   }
 }

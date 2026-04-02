@@ -35,23 +35,51 @@ export const getListeningByIdController = async (req: Request, res: Response) =>
   }
 };
 
+// export const submitListeningAnswers = async (req: Request, res: Response) => {
+//   try {
+//     const result = await evaluateListeningAnswers(
+//       req.body.listeningId,
+//       req.body.answers
+//     );
+
+//     if (!result) {
+//       return res.status(404).json({ message: "Listening passage not found" });
+//     }
+
+//     res.json({ success: true, ...result });
+//   } catch {
+//     res.status(500).json({ message: "Failed to evaluate answers" });
+//   }
+// };
+
+
 export const submitListeningAnswers = async (req: Request, res: Response) => {
   try {
+    // 1. Get the session
+    const session = await auth.api.getSession({ headers: req.headers as any });
+    if (!session?.user) {
+      return res.status(401).json({ message: "Unauthorized: You must be logged in." });
+    }
+
+    // 2. Pass userId and answers. (Fallback to passageId just in case your frontend sends that)
+    const testId = req.body.listeningId || req.body.passageId; 
+
     const result = await evaluateListeningAnswers(
-      req.body.listeningId,
+      session.user.id,
+      testId,
       req.body.answers
     );
 
     if (!result) {
-      return res.status(404).json({ message: "Listening passage not found" });
+      return res.status(404).json({ message: "Listening test not found" });
     }
 
     res.json({ success: true, ...result });
-  } catch {
-    res.status(500).json({ message: "Failed to evaluate answers" });
+  } catch (error) {
+    console.error("Listening Evaluation Error:", error);
+    res.status(500).json({ message: "Failed to evaluate listening answers" });
   }
 };
-
 export const generateListening = async (req: Request, res: Response) => {
   try {
     const session = await auth.api.getSession({ headers: req.headers as any });

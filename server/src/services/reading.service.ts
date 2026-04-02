@@ -4,7 +4,7 @@ import {
   generateReadingTitleAI, 
   generateReadingQuestionsAI 
 } from "./ai.service";
-
+import { ReadingResult } from "../models/readingResult.model";
 /**
  * HELPER: Forces AI questions to match Mongoose schema perfectly.
  * Handles the "Array to String" casting error specifically.
@@ -44,29 +44,76 @@ export const getAllReadingPassages = async (userId: string) => {
 export const getReadingPassageById = async (id: string) => {
   return Reading.findById(id).select("-questions.correctAnswer").lean();
 };
-
-export const evaluateReadingAnswers = async (passageId: string, answers: string[]) => {
+export const evaluateReadingAnswers = async (userId: string, passageId: string, answers: string[]) => {
   const passage = await Reading.findById(passageId);
   if (!passage) return null;
 
-  let score = 0;
-  const results: any[] = [];
+  let correctCount = 0;
+  const detailedAnswers: any[] = [];
 
   passage.questions.forEach((q: any, index: number) => {
-    const userAnswer = answers[index];
-    const isCorrect = userAnswer?.toLowerCase().trim() === q.correctAnswer.toLowerCase().trim();
-    if (isCorrect) score++;
+    // Make sure we handle undefined if the user skipped a question
+    const userAnswer = answers[index] || ""; 
+    const isCorrect = userAnswer.toLowerCase().trim() === q.correctAnswer.toLowerCase().trim();
+    
+    if (isCorrect) correctCount++;
 
-    results.push({
+    detailedAnswers.push({
       question: q.question,
-      yourAnswer: userAnswer,
-      correctAnswer: q.correctAnswer,
+      userAnswer: userAnswer,
       isCorrect
     });
   });
 
-  return { totalQuestions: passage.questions.length, correctAnswers: score, results };
+  const totalQuestions = passage.questions.length;
+  
+  // Estimate a Band Score (0 to 9) based on the percentage correct
+  const bandScore = totalQuestions > 0 
+    ? Number(((correctCount / totalQuestions) * 9).toFixed(1)) 
+    : 0;
+
+  // 🚀 WIRE UP: Save this attempt to the database!
+  const attempt = await ReadingResult.create({
+    userId,
+    passageId,
+    score: bandScore,
+    correctAnswers: correctCount,
+    totalQuestions: totalQuestions,
+    detailedAnswers: detailedAnswers,
+    status: 'completed'
+  });
+
+  // Return the data so the frontend can display the immediate result
+  return { 
+    id: attempt._id, // Give the frontend the ID of this specific attempt
+    totalQuestions, 
+    correctAnswers: correctCount, 
+    bandScore,
+    results: detailedAnswers 
+  };
 };
+// export const evaluateReadingAnswers = async (passageId: string, answers: string[]) => {
+//   const passage = await Reading.findById(passageId);
+//   if (!passage) return null;
+
+//   let score = 0;
+//   const results: any[] = [];
+
+//   passage.questions.forEach((q: any, index: number) => {
+//     const userAnswer = answers[index];
+//     const isCorrect = userAnswer?.toLowerCase().trim() === q.correctAnswer.toLowerCase().trim();
+//     if (isCorrect) score++;
+
+//     results.push({
+//       question: q.question,
+//       yourAnswer: userAnswer,
+//       correctAnswer: q.correctAnswer,
+//       isCorrect
+//     });
+//   });
+
+//   return { totalQuestions: passage.questions.length, correctAnswers: score, results };
+// };
 
 // Generation from Scratch (The "Magic Button")
 export const generateReadingTest = async (userId: string) => {

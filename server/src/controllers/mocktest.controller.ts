@@ -103,7 +103,13 @@ export const submitMockTest = async (req: Request, res: Response): Promise<void>
     }
 
     const userId = session.user.id; 
-    const { sections, detailedReport } = req.body;
+    // 🚀 We now expect the testId from the frontend
+    const { testId, sections, detailedReport } = req.body;
+
+    if (!testId) {
+      res.status(400).json({ success: false, message: "Test ID is required for submission" });
+      return;
+    }
 
     // A. Calculate Overall Band Score
     const r = sections?.reading?.score || 0;
@@ -112,23 +118,28 @@ export const submitMockTest = async (req: Request, res: Response): Promise<void>
     const s = sections?.speaking?.score || 0;
     const overallBand = Number(((r + l + w + s) / 4).toFixed(1));
 
-    // B. Save to MongoDB
-    const newTest = await Mocktest.create({
-       userId,
-       status: "completed",
-       overallBand,
-       sections,
-       detailedReport, // This stores the answers/mistakes for review
-       createdAt: new Date()
-    });
+    // B. 🚀 UPDATE the existing test instead of creating a duplicate!
+    const updatedTest = await Mocktest.findByIdAndUpdate(
+      testId,
+      {
+         $set: {
+           status: "completed",
+           overallBand,
+           sections,
+           detailedReport,
+           updatedAt: new Date()
+         }
+      },
+      { new: true } // Returns the updated document
+    );
 
-    // C. Update Dashboard Activity (A full mock test is ~180 mins)
+    // C. Update Dashboard Activity
     await logUserActivity(userId, 180);
 
-    res.status(201).json({ 
+    res.status(200).json({ 
       success: true, 
       message: "Mock test submitted and report generated.",
-      data: newTest 
+      data: updatedTest 
     });
   } catch (error) {
     console.error("Submit Mock Test Error:", error);

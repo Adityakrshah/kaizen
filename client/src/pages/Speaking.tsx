@@ -224,7 +224,7 @@ export function Speaking() {
             <Card className="h-full border-primary/20 bg-card/40 p-8 animate-in slide-in-from-right-4 duration-500 flex flex-col shadow-xl">
                 <div className="text-center p-8 bg-primary/5 rounded-2xl border border-primary/10 mb-8">
                   <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Overall AI Score</p>
-                  <div className="text-7xl font-black text-foreground">{results?.aiScore}<span className="text-2xl text-muted-foreground">/90</span></div>
+                  <div className="text-7xl font-black text-foreground">{results?.score}<span className="text-2xl text-muted-foreground">/90</span></div>
                 </div>
 
                 <div className="space-y-8">

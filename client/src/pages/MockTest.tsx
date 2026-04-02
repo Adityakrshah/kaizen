@@ -104,7 +104,7 @@ export function MockTest() {
     } catch (err) {}
   };
 
-  // --- GRADING ENGINE ---
+// --- GRADING ENGINE ---
   const submitAndGradeExam = async () => {
     setIsGrading(true);
     setTestState("completed"); 
@@ -131,6 +131,7 @@ export function MockTest() {
 
       // 3. GRADE WRITING (REAL AI INTEGRATION)
       let writingBand = 0;
+      let currentAiFeedback = aiFeedback; // Local variable to ensure we catch it in time for the DB save
       try {
         const evalRes = await axios.post("http://localhost:5000/api/mocktest/evaluate-writing", {
           task1Response: testAnswers.writing.task1,
@@ -140,12 +141,14 @@ export function MockTest() {
         
         if (evalRes.data.success) {
           writingBand = evalRes.data.bandScore;
-          setAiFeedback(evalRes.data.feedback); // 🚀 Save the Groq feedback for the report!
+          currentAiFeedback = evalRes.data.feedback;
+          setAiFeedback(currentAiFeedback); 
         }
       } catch (err) {
         console.error("AI Writing evaluation failed", err);
         writingBand = testAnswers.writing.task2.length > 50 ? 5.5 : 0; 
-        setAiFeedback("AI evaluation failed due to a network error. Fallback score applied based on word count.");
+        currentAiFeedback = "AI evaluation failed due to a network error. Fallback score applied based on word count.";
+        setAiFeedback(currentAiFeedback);
       }
 
       // 4. GRADE SPEAKING
@@ -164,13 +167,19 @@ export function MockTest() {
 
       setFinalScores(calculatedScores);
 
-      // 6. SUBMIT TO BACKEND
+      // 6. 🚀 FIXED: Hit the SUBMIT route with the perfectly formatted data
       if (testId) {
-        await axios.patch("http://localhost:5000/api/mocktest/update", {
+        await axios.post("http://localhost:5000/api/mocktest/submit", {
           testId,
-          status: "completed",
-          scores: calculatedScores,
-          warnings
+          sections: {
+            listening: { score: listeningBand || 0 },
+            reading: { score: readingBand || 0 },
+            writing: { score: writingBand || 0 },
+            speaking: { score: speakingBand || 0 }
+          },
+          detailedReport: {
+            writing: { aiFeedback: currentAiFeedback || "No feedback generated." }
+          }
         }, { withCredentials: true });
       }
 

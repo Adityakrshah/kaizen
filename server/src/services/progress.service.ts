@@ -2,12 +2,12 @@ import { Progress } from "../models/progress.model";
 import { Mocktest } from "../models/mocktest.model";
 import { UserSettings } from "../models/settings.model";
 import UserVocab from "../models/userVocab.model";
-// Import the individual module models
-import { Reading } from "../models/reading.model";
-import { Listening } from "../models/listening.model";
-import { Writing } from "../models/writing.model";
-import { Speaking } from "../models/speaking.model";
 
+// 🚀 FIXED IMPORTS: Use ReadingResult instead of Reading
+import { ReadingResult } from "../models/readingResult.model"; 
+import { ListeningResult } from "../models/listeningResult.model";
+import { Writing } from "../models/writing.model";
+import { SpeakingResult } from "../models/speakingResult.model";
 // ==========================================
 // 1. STANDARD CRUD
 // ==========================================
@@ -18,20 +18,16 @@ export const getUserProgress = async (userId: string) => {
 export const updateProgress = async (userId: string, data: any) => {
     return await Progress.findOneAndUpdate({ userId }, data, { new: true, upsert: true });
 };
+// ... (getUserProgress and updateProgress stay the same) ...
 
-// ==========================================
-// 2. FULLY DYNAMIC DASHBOARD ENGINE (ALL MODULES)
-// ==========================================
 export const getDashboardData = async (userId: string) => {
   try {
-    // 🚀 HIGH PERFORMANCE: Fetch ALL collections concurrently
-    // REMOVED { status: "completed" } because your DB doesn't use it!
     const [
       settings, 
       vocabLearned, 
       progressRecord, 
       recentTests,
-      readingPractices,
+      readingPractices, // 👈 Now this will hold your true results!
       listeningPractices,
       writingPractices,
       speakingPractices
@@ -40,35 +36,33 @@ export const getDashboardData = async (userId: string) => {
       UserVocab.countDocuments({ userId, status: "mastered" }),
       Progress.findOne({ userId }),
       Mocktest.find({ userId, status: "completed" }).sort({ createdAt: -1 }).limit(5).lean<any[]>(),
-      Reading.find({ userId }).lean<any[]>(),
-      Listening.find({ userId }).lean<any[]>(),
+      
+      // 🚀 THE FIX: Query ReadingResult, not the master Reading library
+      ReadingResult.find({ userId }).lean<any[]>(), 
+      
+     ListeningResult.find({ userId }).lean<any[]>(),
       Writing.find({ userId }).lean<any[]>(),
-      Speaking.find({ userId }).lean<any[]>()
+      SpeakingResult.find({ userId }).lean<any[]>()
     ]);
 
-    // A. Setup Settings
+    // ... (Settings and Daily Progress logic stays the same) ...
     const targetScore = settings?.targetScore ? parseFloat(settings.targetScore) : 7.0;
     const dailyGoalMins = settings?.dailyStudyGoal ? parseInt(settings.dailyStudyGoal) : 60;
 
-    // B. Setup Daily Progress
-    let streakDays = 0;
+    let streakDays = progressRecord?.streakDays || 0;
     let studiedTodayMins = 0;
-
     if (progressRecord) {
-        streakDays = progressRecord.streakDays;
         const today = new Date().toDateString();
         const lastActive = new Date(progressRecord.lastActiveDate).toDateString();
-        if (today === lastActive) {
-            studiedTodayMins = progressRecord.studiedTodayMins;
-        }
+        if (today === lastActive) studiedTodayMins = progressRecord.studiedTodayMins;
     }
 
     let currentScore = 0;
     let formattedRecentTests: any[] = [];
     
-    // 🚀 NEW MAPPING: Digs exactly into aiEvaluation.bandScore like your DB shows
+    // 🚀 NEW MAPPING: readingPractices now has direct access to the `score` field from ReadingResult
     const allReadingScores: number[] = readingPractices
-        .map(p => p.score || p.bandScore || 0)
+        .map(p => p.score || 0)
         .filter(s => s > 0);
         
     const allListeningScores: number[] = listeningPractices
@@ -83,23 +77,21 @@ export const getDashboardData = async (userId: string) => {
         .map(p => p.aiEvaluation?.bandScore || p.score || 0) 
         .filter(s => s > 0);
 
-    // Default Empty State Insights
+    // ... (The rest of your Mocktest processing, averages, and AI insights stay EXACTLY the same) ...
+    
     let insights = {
         weakest: { module: "Pending", tip: "Take a test or practice to unlock insights." },
         strongest: { module: "Pending", message: "Take a test or practice to unlock insights." }
     };
 
-    // C. Process Mock Tests (Add mock test section scores to our true average arrays)
     if (recentTests.length > 0) {
         let totalOverallBand = 0;
-
         formattedRecentTests = recentTests.map((test, index) => {
             const r = test.sections?.reading?.score || test.readingScore || 0;
             const l = test.sections?.listening?.score || test.listeningScore || 0;
             const w = test.sections?.writing?.score || test.writingScore || 0;
             const s = test.sections?.speaking?.score || test.speakingScore || 0;
             
-            // Push mock test sections into the overall tracking arrays
             if (r > 0) allReadingScores.push(r);
             if (l > 0) allListeningScores.push(l);
             if (w > 0) allWritingScores.push(w);
@@ -115,27 +107,18 @@ export const getDashboardData = async (userId: string) => {
                 date: test.createdAt ? new Date(test.createdAt).toLocaleDateString() : "Just now"
             };
         });
-
         currentScore = Number((totalOverallBand / recentTests.length).toFixed(1));
     }
 
-    // D. Helper function to safely calculate average of an array
     const calcAverage = (scores: number[]) => scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
 
-    // E. Calculate True Individual Module Averages
-    const avgReading = calcAverage(allReadingScores);
-    const avgListening = calcAverage(allListeningScores);
-    const avgWriting = calcAverage(allWritingScores);
-    const avgSpeaking = calcAverage(allSpeakingScores);
-
     const moduleAverages = {
-        reading: Number(avgReading.toFixed(1)),
-        listening: Number(avgListening.toFixed(1)),
-        writing: Number(avgWriting.toFixed(1)),
-        speaking: Number(avgSpeaking.toFixed(1)),
+        reading: Number(calcAverage(allReadingScores).toFixed(1)),
+        listening: Number(calcAverage(allListeningScores).toFixed(1)),
+        writing: Number(calcAverage(allWritingScores).toFixed(1)),
+        speaking: Number(calcAverage(allSpeakingScores).toFixed(1)),
     };
 
-    // F. DYNAMIC AI INSIGHTS GENERATOR (Only runs if user has actual data)
     if (allReadingScores.length > 0 || allListeningScores.length > 0 || allWritingScores.length > 0 || allSpeakingScores.length > 0) {
         const modules = [
             { name: "Reading", score: moduleAverages.reading, tip: "Focus on skimming and matching headings.", msg: "Your comprehension speed is excellent." },
@@ -144,9 +127,7 @@ export const getDashboardData = async (userId: string) => {
             { name: "Speaking", score: moduleAverages.speaking, tip: "Try to speak at length without hesitation.", msg: "Your fluency and pronunciation are great." }
         ];
 
-        // Sort by score to find strongest/weakest
         modules.sort((a, b) => a.score - b.score);
-        
         insights = {
             weakest: { module: modules[0].name, tip: modules[0].tip },
             strongest: { module: modules[3].name, message: modules[3].msg }
@@ -167,8 +148,6 @@ export const getDashboardData = async (userId: string) => {
     throw new Error("Failed to compile dashboard data");
   }
 };
-
-
 // ==========================================
 // 3. ACTIVITY LOGGER
 // ==========================================

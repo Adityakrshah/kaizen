@@ -1,16 +1,13 @@
-import { Speaking } from "../models/speaking.model"
+// 🚀 FIXED: Import the Result model!
+import { SpeakingResult } from "../models/speakingResult.model"
 import { SpeakingPrompt } from "../models/speakingPrompt.model"
 
 import { transcribeAudio } from "./whisper.service"
 import { evaluateSpeakingAI } from "./ai.service"
 
-
-// 👈 Added promptText here
 export const evaluateSpeaking = async (userId: string, audioPath: string, promptText: string) => {
   try {
     const transcript = await transcribeAudio(audioPath);
-    
-    // 👈 Pass promptText to resolve the "2 arguments expected" error
     const aiResponse = await evaluateSpeakingAI(transcript, promptText);
     
     let data;
@@ -18,19 +15,21 @@ export const evaluateSpeaking = async (userId: string, audioPath: string, prompt
       const cleaned = aiResponse.replace(/```json/g, "").replace(/```/g, "").trim();
       data = JSON.parse(cleaned);
     } catch (e) {
-      data = { bandScore: 50, pronunciation: 50, fluency: 50, feedback: "Analysis error", overallFeedback: "" };
+      data = { bandScore: 0, pronunciation: 0, fluency: 0, feedback: "Analysis error", overallFeedback: "" };
     }
 
-    // 👈 Now matches the model perfectly
-    return await Speaking.create({
+    // 🚀 WIRE UP: Save to SpeakingResult
+    return await SpeakingResult.create({
       userId,
+      promptText,
       audioUrl: audioPath,
-      transcript,
-      aiScore: data.bandScore,
+      transcription: transcript,
+      score: data.bandScore, // Maps to the dashboard's expected "score"
       pronunciation: data.pronunciation,
       fluency: data.fluency,
-      feedback: data.feedback,
-      overallFeedback: data.overallFeedback
+      aiFeedback: data.feedback,
+      overallFeedback: data.overallFeedback,
+      status: 'completed'
     });
   } catch (error) {
     console.error("Speaking evaluation error:", error);
@@ -38,38 +37,30 @@ export const evaluateSpeaking = async (userId: string, audioPath: string, prompt
   }
 };
 
-/**
- * Get speaking prompts
- */
 export const getSpeakingPrompts = async (limit: number = 20) => {
-  return await SpeakingPrompt.find().limit(limit)
-}
+  return await SpeakingPrompt.find().limit(limit);
+};
 
-/**
- * Get one random speaking prompt
- */
 export const getRandomSpeakingPrompt = async () => {
-  const result = await SpeakingPrompt.aggregate([
-    { $sample: { size: 1 } }
-  ])
+  const result = await SpeakingPrompt.aggregate([{ $sample: { size: 1 } }]);
+  return result[0];
+};
 
-  return result[0]
-}
+// 🚀 FIXED: Added userId so people don't see each other's history!
+export const getSpeakingHistory = async (userId: string, page: number, limit: number) => {
+  const skip = (page - 1) * limit;
 
-export const getSpeakingHistory = async (page: number, limit: number) => {
-  const skip = (page - 1) * limit
-
-  const attempts = await Speaking.find()
+  const attempts = await SpeakingResult.find({ userId })
     .sort({ createdAt: -1 })
     .skip(skip)
-    .limit(limit)
+    .limit(limit);
 
-  const total = await Speaking.countDocuments()
+  const total = await SpeakingResult.countDocuments({ userId });
 
   return {
     attempts,
     total,
     page,
     pages: Math.ceil(total / limit)
-  }
-}
+  };
+};

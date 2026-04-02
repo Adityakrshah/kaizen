@@ -1,5 +1,11 @@
 import { Router } from "express";
-import { startmocktest, updatemocktest ,getMockTestById, evaluateMockWriting} from "../controllers/mocktest.controller";
+import { 
+  startmocktest, 
+  updatemocktest, 
+  getMockTestById, 
+  evaluateMockWriting,
+  submitMockTest // 🚀 1. ADDED THIS IMPORT
+} from "../controllers/mocktest.controller";
 
 const router = Router();
 
@@ -8,8 +14,14 @@ router.post("/start", startmocktest);
 
 // PATCH /api/mocktest/update
 router.patch("/update", updatemocktest);
-// server/src/routes/mocktest.routes.ts
+
+// POST /api/mocktest/submit
+router.post("/submit", submitMockTest); // 🚀 2. ADDED THIS ROUTE
+
+// GET /api/mocktest/:id
 router.get("/:id", getMockTestById);
-// Add this alongside your /start and /update routes:
+
+// POST /api/mocktest/evaluate-writing
 router.post("/evaluate-writing", evaluateMockWriting);
+
 export default router;
