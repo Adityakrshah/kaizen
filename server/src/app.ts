@@ -94,6 +94,7 @@ import { toNodeHandler } from "better-auth/node";
 import { auth } from "./config/auth";
 
 // Routes
+
 import settingsRoutes from "./routes/settings.routes";
 import systemRoutes from "./routes/system.routes";
 import vocabularyRoutes from "./routes/vocabulary.routes";
@@ -103,7 +104,7 @@ import writingRoutes from "./routes/writing.routes";
 import speakingRoutes from "./routes/speaking.routes";
 import mocktestRoutes from "./routes/mocktest.routes";
 import progressRoutes from "./routes/progress.routes";
-
+import profileRoutes from "./routes/profile.routes";
 // Middleware
 import { errorHandler } from "./middleware/error.middleware";
 import { apiLimiter } from "./middleware/rateLimit.middleware";
@@ -154,6 +155,7 @@ app.use("/api/speaking", speakingRoutes);
 app.use("/api/mocktest", mocktestRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/system", systemRoutes);
+app.use("/api/profile", profileRoutes);
 
 // Static files (Serving uploaded profile pictures)
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));

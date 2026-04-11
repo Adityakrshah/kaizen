@@ -1,31 +1,29 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  User, Bell, GraduationCap, Save, ShieldAlert, Camera, 
-  Trash2, Eye, Loader2, Minus, Plus, ChevronDown 
+  User, Bell, GraduationCap, Save, ShieldAlert, 
+  Eye, Loader2, Minus, Plus , Camera
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner"; // Recommended for success/error feedback
+import { Textarea } from "@/components/ui/textarea"; // Make sure you have this Shadcn component!
+import { toast } from "sonner"; 
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-
 import { useSession, authClient } from "@/lib/auth-client";
+import { useProfile } from "@/features/settings/hooks/useProfile"; // 🚀 Added our hook!
 
 export function Settings() {
   const navigate = useNavigate();
   const { data: session, isPending: sessionPending } = useSession();
+  const { profile, updateProfile, deleteProfile } = useProfile(); // 🚀 Pulling in backend DB
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
   
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -34,6 +32,8 @@ export function Settings() {
   // States for the form
   const [name, setName] = useState("");
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [bio, setBio] = useState("");
+  const [country, setCountry] = useState("");
   const [isViewingImage, setIsViewingImage] = useState(false);
 
   // States for the Study Profile & Notifications (Backend brain logic)
@@ -46,11 +46,21 @@ export function Settings() {
   useEffect(() => {
     async function syncData() {
       if (!session?.user) return;
-      
+      if (profile?.coverPicture) setCoverPreview(profile.coverPicture);
       try {
         // Sync Identity (Better Auth)
         setName(session.user.name || "");
         setAvatarPreview(session.user.image || null);
+
+       // Sync Profile Details (Our MongoDB Profile)
+        if (profile) {
+           setBio(profile.bio || "");
+           setCountry(profile.country || "");
+           // 🚀 Pull the image from our DB, fallback to Better Auth if empty
+           if (profile.profilePicture) {
+             setAvatarPreview(profile.profilePicture);
+           }
+        }
 
         // Sync Preferences (Custom Kaizen Backend)
         const res = await fetch("http://localhost:5000/api/settings", { 
@@ -72,7 +82,7 @@ export function Settings() {
     }
 
     if (!sessionPending) syncData();
-  }, [session, sessionPending]);
+  }, [session, sessionPending, profile]);
 
   // 2. 📸 HANDLE IMAGE (Avatar) PREVIEW
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,17 +103,22 @@ export function Settings() {
     
     const savePromise = new Promise(async (resolve, reject) => {
       try {
-        // Step A: Update Better Auth (Profile Info)
-        await authClient.updateUser({
-          name: name,
-          image: avatarPreview || "",
+        // Step A: Update Better Auth (Profile Info - we can skip sending the huge image here)
+        await authClient.updateUser({ name: name });
+
+        // Step B: Update our Custom Profile DB (Send the image here!)
+        await updateProfile.mutateAsync({ bio, country, profilePicture: avatarPreview, coverPicture: coverPreview });
+        await updateProfile.mutateAsync({ 
+          bio, 
+          country, 
+          profilePicture: avatarPreview // 🚀 ADD THIS LINE
         });
 
-        // Step B: Update Custom Backend (Study Profile)
+        // Step C: Update Custom Backend (Study Profile)
         const response = await fetch("http://localhost:5000/api/settings", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          credentials: "include", // 🚀 Required to pass requireAuth middleware
+          credentials: "include", 
           body: JSON.stringify({
             examType,
             targetScore,
@@ -113,7 +128,6 @@ export function Settings() {
         });
 
         if (response.ok) {
-          // Success! Resolve the promise
           resolve(true);
         } else {
           throw new Error("Backend update failed");
@@ -123,14 +137,11 @@ export function Settings() {
       }
     });
 
-    // Optional: Use toast.promise for nice loading feedback
     toast.promise(savePromise, {
       loading: 'Saving changes...',
       success: () => {
-        // 🚀 THE MAGIC FIX: Show a success toast, wait a second, and reload the entire page.
-        // This is the only guaranteed way to make the header/tabs re-fetch fresh session data.
         setTimeout(() => window.location.reload(), 1200);
-        return 'Profile saved! Sycing...';
+        return 'Profile saved! Syncing...';
       },
       error: 'Failed to save all changes. Check your connection.',
     });
@@ -140,14 +151,15 @@ export function Settings() {
 
   // 4. 🗑️ DELETE ACCOUNT
   const handleDeleteAccount = async () => {
-    if (!window.confirm("CRITICAL: Are you absolutely sure? This will delete all your mock test scores forever.")) return;
+    if (!window.confirm("CRITICAL: Are you absolutely sure? This will disable your account.")) return;
     setIsDeleting(true);
     try {
-      await authClient.deleteUser();
-      toast.success("Account deleted. Redirecting...");
-      setTimeout(() => navigate("/signup"), 1500);
+      await deleteProfile.mutateAsync(); // Trigger the Soft Delete
+      await authClient.signOut(); // Log them out
+      toast.success("Account disabled. Redirecting...");
+      setTimeout(() => navigate("/login"), 1500);
     } catch (error) {
-      toast.error("Security check failed. Try logging out and back in first.");
+      toast.error("Failed to disable account.");
       setIsDeleting(false);
     }
   };
@@ -163,7 +175,30 @@ export function Settings() {
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-10 animate-in fade-in duration-500 pb-16">
-      
+      <div className="space-y-3 text-left mb-6">
+  <Label className="text-base">Cover Photo</Label>
+  <div className="h-32 w-full bg-muted rounded-xl border-2 border-dashed flex items-center justify-center relative overflow-hidden">
+    {coverPreview ? (
+      <img src={coverPreview} className="w-full h-full object-cover" />
+    ) : (
+      <span className="text-muted-foreground text-sm">No cover photo</span>
+    )}
+    <input 
+      type="file" 
+      className="absolute inset-0 opacity-0 cursor-pointer" 
+      accept="image/*" 
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => setCoverPreview(reader.result as string);
+          reader.readAsDataURL(file);
+        }
+      }} 
+    />
+  </div>
+  {coverPreview && <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setCoverPreview(null)}>Remove Cover</Button>}
+</div>
       {/* Premium Image Viewer */}
       {isViewingImage && avatarPreview && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-xl p-4 cursor-pointer" onClick={() => setIsViewingImage(false)}>
@@ -178,21 +213,26 @@ export function Settings() {
           <h1 className="text-4xl font-extrabold tracking-tight">Settings</h1>
           <p className="text-muted-foreground text-lg italic mt-1">Refine your Kaizen experience.</p>
         </div>
-        <Button onClick={handleSave} disabled={isSaving} className="shadow-lg h-12 px-10 rounded-full font-bold active:scale-95 transition-all">
-          {isSaving ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
-          Save All Changes
-        </Button>
+        <div className="flex gap-4">
+          <Button variant="outline" onClick={() => navigate("/profile")} className="shadow-sm h-12 px-6 rounded-full font-bold">
+            View Public Profile
+          </Button>
+          <Button onClick={handleSave} disabled={isSaving} className="shadow-lg h-12 px-10 rounded-full font-bold active:scale-95 transition-all">
+            {isSaving ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
+            Save All Changes
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="account" className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-12">
         
-        {/* Navigation Sidebar (Vertical on Desktop, Horizontal on Mobile) */}
+        {/* Navigation Sidebar */}
         <TabsList className="flex lg:flex-col h-auto bg-transparent p-0 gap-1 lg:gap-2 justify-start border-b lg:border-b-0 pb-4 lg:pb-0 lg:border-l lg:pl-4 overflow-x-auto no-scrollbar">
           <TabsTrigger value="account" className="w-full justify-start gap-3 px-4 py-3 rounded-xl data-[state=active]:bg-primary/5 data-[state=active]:text-primary border border-transparent data-[state=active]:border-primary/20 text-sm font-semibold">
-            <User size={18} /> Account
+            <User size={18} /> Edit Profile
           </TabsTrigger>
           <TabsTrigger value="study" className="w-full justify-start gap-3 px-4 py-3 rounded-xl data-[state=active]:bg-primary/5 data-[state=active]:text-primary border border-transparent data-[state=active]:border-primary/20 text-sm font-semibold">
-            <GraduationCap size={18} /> Study Profile
+            <GraduationCap size={18} /> Study Settings
           </TabsTrigger>
           <TabsTrigger value="notifications" className="w-full justify-start gap-3 px-4 py-3 rounded-xl data-[state=active]:bg-primary/5 data-[state=active]:text-primary border border-transparent data-[state=active]:border-primary/20 text-sm font-semibold">
             <Bell size={18} /> Notifications
@@ -204,24 +244,66 @@ export function Settings() {
           {/* TAB: ACCOUNT */}
           <TabsContent value="account" className="m-0 space-y-8 animate-in slide-in-from-right-4 duration-500">
             <Card className="border-border/40 bg-card/40 backdrop-blur-sm shadow-xl shadow-black/5">
-              <CardHeader><CardTitle>Profile Details</CardTitle></CardHeader>
+              <CardHeader><CardTitle>Public Profile Details</CardTitle></CardHeader>
               <CardContent className="space-y-10">
-                <div className="flex flex-col sm:flex-row items-center gap-10">
-                  <div className="relative group cursor-pointer" onClick={() => setIsViewingImage(true)}>
-                    <Avatar className="h-32 w-32 border-4 border-background shadow-xl">
+
+                {/* 🚀 COVER PHOTO WITH HOVER UPLOAD */}
+                <div className="space-y-3 text-left mb-6">
+                  <Label className="text-base">Cover Photo</Label>
+                  <div className="group h-40 w-full bg-muted rounded-2xl border-2 border-dashed border-border/50 relative overflow-hidden transition-all hover:border-primary/50 cursor-pointer">
+                    {coverPreview ? (
+                      <img src={coverPreview} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    ) : (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
+                        <Camera className="h-8 w-8 mb-2 opacity-50" />
+                        <span className="text-sm font-medium">Click to upload cover</span>
+                      </div>
+                    )}
+                    
+                    {/* Hover Overlay */}
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <p className="text-white font-bold flex items-center gap-2"><Camera className="h-5 w-5"/> Change Cover</p>
+                    </div>
+
+                    <input 
+                      type="file" 
+                      className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                      accept="image/*" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => setCoverPreview(reader.result as string);
+                          reader.readAsDataURL(file);
+                        }
+                      }} 
+                    />
+                  </div>
+                  {coverPreview && <Button variant="ghost" size="sm" className="text-destructive mt-2" onClick={() => setCoverPreview(null)}>Remove Cover</Button>}
+                </div>
+
+                {/* 🚀 PROFILE PICTURE WITH EYE HOVER */}
+                <div className="flex flex-col sm:flex-row items-center gap-10 border-t border-border/50 pt-8">
+                  {/* The Hover Container */}
+                  <div className="relative group cursor-pointer rounded-full" onClick={() => setIsViewingImage(true)}>
+                    <Avatar className="h-32 w-32 border-4 border-background shadow-xl transition-transform duration-300 group-hover:scale-105">
                       <AvatarImage src={avatarPreview || ""} className="object-cover" />
                       <AvatarFallback className="bg-primary/5 text-primary text-4xl font-black">
-                        {name.charAt(0) || "AD"}
+                        {name.charAt(0) || "U"}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Eye className="text-white h-7 w-7" />
+                    
+                    {/* The Dark Overlay with Eye Icon */}
+                    <div className="absolute inset-0 bg-black/60 rounded-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <Eye className="text-white h-8 w-8 mb-1" />
+                      <span className="text-white text-[10px] font-bold tracking-widest uppercase">View</span>
                     </div>
                   </div>
+                  
                   <div className="space-y-3 text-center sm:text-left">
-                    <Label className="text-base">Profile Image</Label>
+                    <Label className="text-base">Profile Avatar</Label>
                     <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
-                      <Button variant="secondary" size="sm" className="relative">
+                      <Button variant="secondary" size="sm" className="relative shadow-sm">
                         Upload New Photo
                         <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={handleImageChange} />
                       </Button>
@@ -232,15 +314,26 @@ export function Settings() {
                     <p className="text-xs text-muted-foreground italic">Preferred size: 400x400px. JPG or PNG.</p>
                   </div>
                 </div>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2.5">
                     <Label>Full Name</Label>
                     <Input value={name} onChange={e => setName(e.target.value)} className="h-12 bg-background/50" />
                   </div>
                   <div className="space-y-2.5">
-                    <Label>Email (Managed)</Label>
-                    <Input value={session?.user.email} disabled className="h-12 bg-muted/30 border-dashed" />
+                    <Label>Country</Label>
+                    <Input value={country} onChange={e => setCountry(e.target.value)} placeholder="e.g. India" className="h-12 bg-background/50" />
                   </div>
+                </div>
+
+                <div className="space-y-2.5">
+                  <Label>Bio</Label>
+                  <Textarea 
+                    value={bio} 
+                    onChange={e => setBio(e.target.value)} 
+                    placeholder="Tell us a little about your IELTS goals..." 
+                    className="bg-background/50 resize-none h-24" 
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -251,7 +344,7 @@ export function Settings() {
                 <CardDescription>Permanently delete your account and all data.</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="destructive" onClick={handleDeleteAccount} disabled={isDeleting}>Delete Account</Button>
+                <Button variant="destructive" onClick={handleDeleteAccount} disabled={isDeleting}>Disable Account</Button>
               </CardContent>
             </Card>
           </TabsContent>

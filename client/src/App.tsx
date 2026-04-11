@@ -18,6 +18,7 @@ import { Settings } from "./pages/Settings";
 
 // 🚀 Import the Bouncer!
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { Profile } from "./pages/Profile";
 
 function App() {
   return (
@@ -40,8 +41,7 @@ function App() {
               <Route path="/writing" element={<Writing />} />
               <Route path="/vocabulary" element={<Vocabulary />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/profile" element={<Settings />} />
-              <Route path="/mocktest" element={<MockTest />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="/mocktest" element={<MockTest />} />
               <Route path="/mocktest/result/:id" element={<MockTestResult />} />
             </Route>

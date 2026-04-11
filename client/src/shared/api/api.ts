@@ -49,3 +49,19 @@ export async function request(endpoint: string, options: ApiOptions = {}) {
     throw error;
   }
 }
+export const api = {
+  get: (endpoint: string, options?: ApiOptions) => 
+    request(endpoint, { ...options, method: "GET" }),
+    
+  post: (endpoint: string, body?: any, options?: ApiOptions) => 
+    request(endpoint, { ...options, method: "POST", body }),
+    
+  patch: (endpoint: string, body?: any, options?: ApiOptions) => 
+    request(endpoint, { ...options, method: "PATCH", body }),
+    
+  put: (endpoint: string, body?: any, options?: ApiOptions) => 
+    request(endpoint, { ...options, method: "PUT", body }),
+    
+  delete: (endpoint: string, options?: ApiOptions) => 
+    request(endpoint, { ...options, method: "DELETE" }),
+};

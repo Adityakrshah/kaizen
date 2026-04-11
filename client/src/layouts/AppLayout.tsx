@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/components/theme-provider";
 import { useSession, signOut } from "@/lib/auth-client";
+import { useProfile } from "@/features/settings/hooks/useProfile";
+
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -37,6 +39,7 @@ export function AppLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { data: session } = useSession();
+  const { profile } = useProfile();
 
   const handleLogout = async () => {
     await signOut();
@@ -112,10 +115,11 @@ export function AppLayout() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8 ring-2 ring-primary/20">
-                    <AvatarImage src={session?.user?.image || ""} alt={session?.user?.name || "User"} />
-                    <AvatarFallback className="bg-primary/20 text-primary font-bold">{getInitials(session?.user?.name)}</AvatarFallback>
-                  </Avatar>
+                  <Avatar className="h-8 w-8 cursor-pointer">
+  {/* 🚀 Check MongoDB first, then Better Auth, then empty string */}
+  <AvatarImage src={profile?.profilePicture || session?.user?.image || ""} />
+  <AvatarFallback>{session?.user?.name?.charAt(0) || "U"}</AvatarFallback>
+</Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end">

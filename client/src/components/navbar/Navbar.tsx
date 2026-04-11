@@ -3,6 +3,7 @@ import { Button } from "../ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
 import { useTheme } from "../theme-provider"; 
 import { Link } from "react-router-dom";
+import { useProfile } from "@/features/settings/hooks/useProfile";
 
 export function Navbar() {
   const { theme, setTheme } = useTheme(); 

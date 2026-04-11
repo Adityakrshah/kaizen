@@ -52,7 +52,8 @@ export const updatemocktest = async (req: Request, res: Response, next: NextFunc
 /**
  * 3. AI Evaluation for Writing Tasks
  */
-export const evaluateMockWriting = async (req: Request, res: Response) => {
+// 🚀 ADD THE RETURN TYPE : Promise<any> or Promise<void>
+export const evaluateMockWriting = async (req: Request, res: Response): Promise<any> => {
   try {
     const { task1Response, task2Response, prompts } = req.body;
 
