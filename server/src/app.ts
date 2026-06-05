@@ -114,7 +114,7 @@ const app = express();
 // 🟢 1. CORS (Absolute Priority)
 // Must be first to handle Pre-flight (OPTIONS) requests correctly.
 app.use(cors({ 
-  origin: "http://localhost:5173", 
+  origin: ["http://localhost:5173", "https://kaizen.adityakshah.com.np"], 
   credentials: true 
 }));
 

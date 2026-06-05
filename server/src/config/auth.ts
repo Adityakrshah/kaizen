@@ -54,8 +54,22 @@ export const auth = betterAuth({
     database: mongodbAdapter(db),
     
     // 🔐 Security & Routing
-    baseURL: "http://localhost:5000", 
-    trustedOrigins: ["http://localhost:5173"],
+    // This will automatically use your Render URL in production, but stay on localhost when you code locally!
+    baseURL: process.env.BETTER_AUTH_URL || "http://localhost:5000", 
+    
+    // Whitelist both your local laptop and your live Netlify domain
+    trustedOrigins: [
+        "http://localhost:5173",
+        "https://kaizen.adityakshah.com.np"
+    ],
+
+    // 🍪 Cross-Site Cookies (Crucial for production logins)
+    advanced: {
+        defaultCookieAttributes: {
+            sameSite: "none", // Allows cookies to travel between Netlify and Render
+            secure: true      // Forces HTTPS (Required when sameSite is "none")
+        }
+    },
 
     // 👤 User Management
     user: {
