@@ -128,7 +128,7 @@ app.use(cookieParser());
  * Better Auth is smart enough to handle its own body parsing for Email/Password,
  * and mounting it here prevents "Body already consumed" errors during Social redirects.
  */
-app.use("/api/auth", toNodeHandler(auth));
+app.all("/api/auth", toNodeHandler(auth));
 
 // 🟢 4. BODY PARSERS (For all other routes)
 // Increased to 5MB to support Base64 profile picture uploads in Settings.
