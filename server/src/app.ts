@@ -32,19 +32,32 @@ const app = express();
 // Without this, Better Auth thinks the connection is HTTP and rejects it.
 app.set("trust proxy", 1);
 
-// 🟢 1. BULLETPROOF CORS (Absolute Priority)
-const corsOptions = {
-  origin: [
-    "http://localhost:5173", 
-    "https://kaizen.adityakshah.com.np"
-  ],
+// 🟢 1. STANDARD CORS (For actual data requests)
+app.use(cors({
+  origin: ["http://localhost:5173", "https://kaizen.adityakshah.com.np"],
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "Accept"]
-};
+}));
 
-app.use(cors(corsOptions));
-app.options("/{*splat}", cors(corsOptions)); // Forces Express to answer all preflight pings
+// 🟢 1.5 THE NUCLEAR PREFLIGHT HANDLER (The Fix)
+// This manually catches every OPTIONS ping, forces the correct headers, 
+// and terminates the request with a perfect 204 Success code so it never hits the 404 route.
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    const allowedOrigins = ["http://localhost:5173", "https://kaizen.adityakshah.com.np"];
+    const origin = req.headers.origin || "";
+    
+    if (allowedOrigins.includes(origin)) {
+      res.header("Access-Control-Allow-Origin", origin);
+    }
+    
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+    
+    return res.status(204).end();
+  }
+  next();
+});
 
 // 🟢 2. LOGGING & COOKIES
 app.use(morgan("dev"));
