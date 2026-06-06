@@ -24,7 +24,6 @@
     "noUncheckedSideEffectImports": true,
 
     /* ADD THESE TWO LINES FOR SHADCN */
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
