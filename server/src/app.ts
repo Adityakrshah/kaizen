@@ -52,7 +52,8 @@ app.use(cookieParser());
 
 // 🟢 3. BETTER AUTH HANDLER
 // Intercepts auth requests before the body parser consumes them
-app.all("/api/auth/*", toNodeHandler(auth));
+// To this correct Express 5 line:
+app.all("/api/auth/*splat", toNodeHandler(auth));
 
 // 🟢 4. BODY PARSERS (For all other routes)
 app.use(express.json({ limit: "5mb" }));
