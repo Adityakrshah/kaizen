@@ -44,7 +44,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // Forces Express to answer all preflight pings
+app.options("/{*splat}", cors(corsOptions)); // Forces Express to answer all preflight pings
 
 // 🟢 2. LOGGING & COOKIES
 app.use(morgan("dev"));
