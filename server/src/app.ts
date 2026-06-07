@@ -30,7 +30,7 @@ const app = express();
 // 🟢 0. TRUST PROXY (CRITICAL FOR RENDER)
 // Tells Express to trust the 'X-Forwarded-Proto' header from Render's load balancer.
 // Without this, Better Auth thinks the connection is HTTP and rejects it.
-app.set("trust proxy", 1);
+app.set("trust proxy", true);
 
 // 🟢 1. STANDARD CORS (For actual data requests)
 app.use(cors({
