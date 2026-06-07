@@ -48,7 +48,7 @@ export function Writing() {
     setStatus("submitting");
 
     try {
-      const res = await axios.post("http://localhost:5000/api/writing/submit", {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/writing/submit`, {
         content,
         prompt: activePrompt,
         taskType

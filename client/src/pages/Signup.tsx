@@ -65,7 +65,7 @@ export function Signup() {
       onSuccess: async () => {
         // Sync Study Goals to custom Backend
         try {
-          await fetch("http://localhost:5000/api/settings", {
+          await fetch(`${import.meta.env.VITE_API_URL}/api/settings`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             credentials: "include", 

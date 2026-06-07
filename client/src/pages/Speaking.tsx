@@ -24,7 +24,7 @@ export function Speaking() {
 
   const fetchNewPrompt = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/speaking/prompts/random", { withCredentials: true });
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/speaking/prompts/random`, { withCredentials: true });
       if (res.data.success) {
         setActivePrompt(res.data.data);
         resetRecording();
@@ -100,7 +100,7 @@ export function Speaking() {
       formData.append("audio", audioFile);
       formData.append("topic", activePrompt.prompt);
 
-      const res = await axios.post("http://localhost:5000/api/speaking/analyze", formData, {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/speaking/analyze`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true
       });

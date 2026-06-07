@@ -81,7 +81,7 @@ export function MockTest() {
     try {
       if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
       try {
-        const res = await axios.post("http://localhost:5000/api/mocktest/start", {}, { withCredentials: true });
+        const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/mocktest/start`, {}, { withCredentials: true });
         if (res.data.success) {
           setTestId(res.data.data._id);
           setExamBundle(res.data.bundle); 
@@ -100,7 +100,7 @@ export function MockTest() {
   const syncTestStatus = async (status: string, currentWarnings: number, reason: string = "") => {
     if (!testId) return;
     try {
-      await axios.patch("http://localhost:5000/api/mocktest/update", { testId, status, warnings: currentWarnings, terminationReason: reason }, { withCredentials: true });
+      await axios.patch(`${import.meta.env.VITE_API_URL}/api/mocktest/update`, { testId, status, warnings: currentWarnings, terminationReason: reason }, { withCredentials: true });
     } catch (err) {}
   };
 
@@ -133,7 +133,7 @@ export function MockTest() {
       let writingBand = 0;
       let currentAiFeedback = aiFeedback; // Local variable to ensure we catch it in time for the DB save
       try {
-        const evalRes = await axios.post("http://localhost:5000/api/mocktest/evaluate-writing", {
+        const evalRes = await axios.post(`${import.meta.env.VITE_API_URL}/api/mocktest/evaluate-writing`, {
           task1Response: testAnswers.writing.task1,
           task2Response: testAnswers.writing.task2,
           prompts: examBundle?.writing
@@ -169,7 +169,7 @@ export function MockTest() {
 
       // 6. 🚀 FIXED: Hit the SUBMIT route with the perfectly formatted data
       if (testId) {
-        await axios.post("http://localhost:5000/api/mocktest/submit", {
+        await axios.post(`${import.meta.env.VITE_API_URL}/api/mocktest/submit`, {
           testId,
           sections: {
             listening: { score: listeningBand || 0 },
@@ -321,7 +321,7 @@ export function MockTest() {
         <div className="flex-1 space-y-2">
           <h3 className="font-bold text-lg">Section 1 Audio</h3>
           <audio 
-            src={`http://localhost:5000/${examBundle?.listening?.audioUrl?.replace(/^\//, '')}`} 
+            src={`${import.meta.env.VITE_API_URL}${examBundle?.listening?.audioUrl?.replace(/^\//, '')}`} 
             controls 
             controlsList="nodownload" 
             className="w-full h-10" 
