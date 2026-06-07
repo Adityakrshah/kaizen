@@ -97,12 +97,9 @@ app.use("/api/profile", profileRoutes);
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // 🟢 7. STATUS & ERROR HANDLING
+// 🟢 7. STATUS & ERROR HANDLING
 app.get("/", (req, res) => {
-  res.json({ 
-    status: "online", 
-    message: "Kaizen API is live and healthy 🚀",
-    timestamp: new Date().toISOString()
-  });
+  res.redirect("https://kaizen.adityakshah.com.np/dashboard");
 });
 
 // Fallback for non-existent routes
