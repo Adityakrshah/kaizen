@@ -1,5 +1,12 @@
+# 1. THE API PROXY (Must be first to intercept backend traffic)
 [[redirects]]
   from = "/api/*"
   to = "https://kaizen-qkj1.onrender.com/api/:splat"
   status = 200
   force = true
+
+# 2. THE REACT FALLBACK (Must be second to catch UI routes)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
