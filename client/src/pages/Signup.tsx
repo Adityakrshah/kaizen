@@ -79,7 +79,7 @@ export function Signup() {
         }
 
         toast.success("Account created successfully!");
-        window.location.href = "/dashboard";
+        window.location.href = "https://kaizen.adityakshah.com.np/dashboard";
       },
       onError: (ctx) => {
         setIsLoading(false);
@@ -101,7 +101,7 @@ export function Signup() {
   const handleSocialLogin = (provider: "google" | "github") => {
     authClient.signIn.social({
       provider,
-      callbackURL: "/dashboard",
+      callbackURL: "https://kaizen.adityakshah.com.np/dashboard",
     });
   };
 
