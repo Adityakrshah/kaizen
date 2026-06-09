@@ -101,7 +101,7 @@ export function Signup() {
   const handleSocialLogin = (provider: "google" | "github") => {
     authClient.signIn.social({
       provider,
-      callbackURL: "https://kaizen.adityakshah.com.np/dashboard",
+      callbackURL: "/dashboard", // 🚀 Changed from absolute to relative
     });
   };
 

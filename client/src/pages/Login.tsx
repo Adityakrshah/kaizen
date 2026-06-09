@@ -62,8 +62,7 @@ export function Login() {
     setIsLoading(true);
     await authClient.signIn.social({
         provider,
-        // 🚀 FIXED: Now uses absolute URL so it correctly redirects to the React frontend
-        callbackURL: "https://kaizen.adityakshah.com.np/dashboard",
+        callbackURL: "/dashboard", // 🚀 Changed from absolute to relative
     });
   };
 
