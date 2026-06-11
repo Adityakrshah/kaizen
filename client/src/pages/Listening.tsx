@@ -199,7 +199,10 @@ function ActiveTest({ testId, onBack }: { testId: string, onBack: () => void }) 
                 <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Listen to the audio</span>
             </div>
             <audio controls className="w-full h-10 accent-primary focus:outline-none">
-              <source src={`http://localhost:5000${test.audioUrl}`} type="audio/mpeg" />
+              <source 
+                src={`${import.meta.env.VITE_API_URL || ""}${test.audioUrl.replace(/https?:\/\/[^\/]+/, "")}`} 
+                type="audio/mpeg" 
+              />
             </audio>
           </div>
         </CardContent>
