@@ -142,10 +142,10 @@ export function Signup() {
               {step === 1 && (
                 <div className="space-y-5 animate-in fade-in slide-in-from-right-4">
                   <FormField control={form.control} name="name" render={({ field }) => (
-                    <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Aditya" {...field} disabled={isLoading}/></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Name" {...field} disabled={isLoading}/></FormControl><FormMessage /></FormItem>
                   )} />
                   <FormField control={form.control} name="email" render={({ field }) => (
-                    <FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="adi@example.com" {...field} disabled={isLoading}/></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="Email" {...field} disabled={isLoading}/></FormControl><FormMessage /></FormItem>
                   )} />
                   <FormField control={form.control} name="password" render={({ field }) => (
                     <FormItem>
