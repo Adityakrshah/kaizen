@@ -1075,7 +1075,7 @@ export function MockTest() {
         <div className="flex-1 w-full space-y-2">
           <h3 className="font-bold text-base sm:text-lg">Section 1 Audio</h3>
           <audio 
-            src={`${import.meta.env.VITE_API_URL}${examBundle?.listening?.audioUrl?.replace(/^\//, '')}`} 
+            src={`${import.meta.env.VITE_SERVER_URL}${examBundle?.listening?.audioUrl?.replace(/^\//, '')}`} 
             controls 
             controlsList="nodownload" 
             className="w-full h-10" 
@@ -1103,41 +1103,112 @@ export function MockTest() {
     </div>
   );
 
+  // const renderReading = () => {
+  //   const passage = examBundle?.reading?.[activeReadingPassage];
+  //   return (
+  //     <div className="flex flex-col h-full animate-in fade-in duration-500 pb-10">
+  //       <div className="flex flex-wrap gap-2 mb-4 shrink-0">
+  //         {examBundle?.reading?.map((_: any, idx: number) => (
+  //           <Button key={idx} variant={activeReadingPassage === idx ? "default" : "outline"} onClick={() => setActiveReadingPassage(idx)} className="text-xs sm:text-sm">
+  //             Passage {idx + 1}
+  //           </Button>
+  //         ))}
+  //       </div>
+  //       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 lg:h-[calc(100%-3rem)]">
+  //         <Card className="w-full lg:w-1/2 p-4 sm:p-8 lg:overflow-y-auto custom-scrollbar border-border/50 shadow-inner bg-card">
+  //           <h2 className="text-xl sm:text-2xl font-black mb-4 sm:mb-6">{passage?.title}</h2>
+  //           <div className="prose prose-sm dark:prose-invert max-w-none leading-loose text-muted-foreground whitespace-pre-wrap">
+  //             {passage?.passage}
+  //           </div>
+  //         </Card>
+  //         <Card className="w-full lg:w-1/2 p-4 sm:p-8 lg:overflow-y-auto custom-scrollbar border-border/50 bg-muted/10">
+  //           <h3 className="font-bold text-base sm:text-lg mb-4 sm:mb-6 flex items-center gap-2"><FileText className="h-4 w-4 sm:h-5 sm:w-5"/> Questions</h3>
+  //           <div className="space-y-6">
+  //             {passage?.questions?.map((q: any, i: number) => (
+  //               <div key={i} className="space-y-3">
+  //                 <p className="font-medium text-sm">{i + 1}. {q.question}</p>
+  //                 {q.options?.map((opt: string, j: number) => (
+  //                   <label key={j} className="flex items-start sm:items-center gap-3 p-3 rounded-lg border bg-card cursor-pointer hover:border-primary transition-colors text-xs sm:text-sm">
+  //                     <input type="radio" name={`read_p${activeReadingPassage}_q${i}`} className="w-4 h-4 mt-0.5 sm:mt-0 text-primary shrink-0" 
+  //                       checked={testAnswers.reading[`${activeReadingPassage}_${i}`] === opt}
+  //                       onChange={() => setTestAnswers(p => ({ ...p, reading: { ...p.reading, [`${activeReadingPassage}_${i}`]: opt } }))}
+  //                     />
+  //                     <span>{opt}</span>
+  //                   </label>
+  //                 ))}
+  //               </div>
+  //             ))}
+  //           </div>
+  //         </Card>
+  //       </div>
+  //     </div>
+  //   );
+  // };
+
+
   const renderReading = () => {
-    const passage = examBundle?.reading?.[activeReadingPassage];
+    // 🚀 Safe fallback paths for Mock Test vs Standalone Test data structures
+    const readingData = examBundle?.reading?.passages || examBundle?.readingData || examBundle?.reading;
+    const passage = Array.isArray(readingData) ? readingData[activeReadingPassage] : readingData;
+    
+    // Fallback to check if questions are under 'questions' or 'Questions'
+    const questionsList = passage?.questions || passage?.Questions || [];
+
     return (
       <div className="flex flex-col h-full animate-in fade-in duration-500 pb-10">
         <div className="flex flex-wrap gap-2 mb-4 shrink-0">
-          {examBundle?.reading?.map((_: any, idx: number) => (
-            <Button key={idx} variant={activeReadingPassage === idx ? "default" : "outline"} onClick={() => setActiveReadingPassage(idx)} className="text-xs sm:text-sm">
+          {Array.isArray(readingData) && readingData.map((_: any, idx: number) => (
+            <Button 
+              key={idx} 
+              variant={activeReadingPassage === idx ? "default" : "outline"} 
+              onClick={() => setActiveReadingPassage(idx)} 
+              className="text-xs sm:text-sm"
+            >
               Passage {idx + 1}
             </Button>
           ))}
         </div>
+        
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 lg:h-[calc(100%-3rem)]">
           <Card className="w-full lg:w-1/2 p-4 sm:p-8 lg:overflow-y-auto custom-scrollbar border-border/50 shadow-inner bg-card">
-            <h2 className="text-xl sm:text-2xl font-black mb-4 sm:mb-6">{passage?.title}</h2>
+            <h2 className="text-xl sm:text-2xl font-black mb-4 sm:mb-6">{passage?.title || "Reading Passage"}</h2>
             <div className="prose prose-sm dark:prose-invert max-w-none leading-loose text-muted-foreground whitespace-pre-wrap">
-              {passage?.passage}
+              {passage?.passage || passage?.text || "No passage text available."}
             </div>
           </Card>
+          
           <Card className="w-full lg:w-1/2 p-4 sm:p-8 lg:overflow-y-auto custom-scrollbar border-border/50 bg-muted/10">
-            <h3 className="font-bold text-base sm:text-lg mb-4 sm:mb-6 flex items-center gap-2"><FileText className="h-4 w-4 sm:h-5 sm:w-5"/> Questions</h3>
+            <h3 className="font-bold text-base sm:text-lg mb-4 sm:mb-6 flex items-center gap-2">
+              <FileText className="h-4 w-4 sm:h-5 sm:w-5"/> Questions
+            </h3>
+            
+            {questionsList.length === 0 && (
+              <p className="text-sm text-muted-foreground italic">No questions found for this passage in the mock bundle.</p>
+            )}
+
             <div className="space-y-6">
-              {passage?.questions?.map((q: any, i: number) => (
-                <div key={i} className="space-y-3">
-                  <p className="font-medium text-sm">{i + 1}. {q.question}</p>
-                  {q.options?.map((opt: string, j: number) => (
-                    <label key={j} className="flex items-start sm:items-center gap-3 p-3 rounded-lg border bg-card cursor-pointer hover:border-primary transition-colors text-xs sm:text-sm">
-                      <input type="radio" name={`read_p${activeReadingPassage}_q${i}`} className="w-4 h-4 mt-0.5 sm:mt-0 text-primary shrink-0" 
-                        checked={testAnswers.reading[`${activeReadingPassage}_${i}`] === opt}
-                        onChange={() => setTestAnswers(p => ({ ...p, reading: { ...p.reading, [`${activeReadingPassage}_${i}`]: opt } }))}
-                      />
-                      <span>{opt}</span>
-                    </label>
-                  ))}
-                </div>
-              ))}
+              {questionsList.map((q: any, i: number) => {
+                const optionsList = q.options || q.Options || q.choices || [];
+                const questionText = q.question || q.text || q.prompt;
+                
+                return (
+                  <div key={i} className="space-y-3">
+                    <p className="font-medium text-sm">{i + 1}. {questionText}</p>
+                    {optionsList.map((opt: string, j: number) => (
+                      <label key={j} className="flex items-start sm:items-center gap-3 p-3 rounded-lg border bg-card cursor-pointer hover:border-primary transition-colors text-xs sm:text-sm">
+                        <input 
+                          type="radio" 
+                          name={`read_p${activeReadingPassage}_q${i}`} 
+                          className="w-4 h-4 mt-0.5 sm:mt-0 text-primary shrink-0" 
+                          checked={testAnswers.reading[`${activeReadingPassage}_${i}`] === opt}
+                          onChange={() => setTestAnswers(p => ({ ...p, reading: { ...p.reading, [`${activeReadingPassage}_${i}`]: opt } }))}
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+                );
+              })}
             </div>
           </Card>
         </div>
@@ -1145,6 +1216,8 @@ export function MockTest() {
     );
   };
 
+
+  
   const renderWriting = () => (
     <div className="flex flex-col lg:flex-row h-full gap-4 lg:gap-6 animate-in fade-in duration-500 pb-10">
       <Card className="flex-1 flex flex-col min-h-[50vh] lg:min-h-0 border-border/50 overflow-hidden">
