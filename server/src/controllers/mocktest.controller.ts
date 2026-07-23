@@ -50,24 +50,30 @@ export const updatemocktest = async (req: Request, res: Response, next: NextFunc
 };
 
 /**
- * 3. AI Evaluation for Writing Tasks
+ * 3. AI Evaluation for Writing Tasks (🚀 FIXED FOR ACCURACY & DETAIL)
  */
-// 🚀 ADD THE RETURN TYPE : Promise<any> or Promise<void>
 export const evaluateMockWriting = async (req: Request, res: Response): Promise<any> => {
   try {
     const { task1Response, task2Response, prompts } = req.body;
 
     const prompt = `
-      You are an expert, strict IELTS examiner. 
-      Task 1 Prompt: ${prompts.task1}
-      Candidate Task 1: ${task1Response}
-      Task 2 Prompt: ${prompts.task2}
-      Candidate Task 2: ${task2Response}
+      You are an expert, highly critical IELTS examiner. 
+      Task 1 Prompt: ${prompts?.task1 || 'Not provided'}
+      Candidate Task 1: ${task1Response || 'Not provided'}
+      
+      Task 2 Prompt: ${prompts?.task2 || 'Not provided'}
+      Candidate Task 2: ${task2Response || 'Not provided'}
 
-      Evaluate both tasks. You MUST respond with ONLY a valid JSON object:
+      Evaluate the candidate's writing strictly against the official IELTS rubric. 
+      You MUST respond with ONLY a valid JSON object matching this exact structure:
       {
         "bandScore": 6.5,
-        "feedback": "A short summary of strengths and weaknesses."
+        "taskResponseScore": 6.5,
+        "coherenceScore": 6.0,
+        "vocabularyScore": 7.0,
+        "grammarScore": 6.5,
+        "overallFeedback": "A detailed 3-4 sentence paragraph explaining the overall performance, strengths, and primary weaknesses.",
+        "suggestions": ["Actionable tip 1", "Actionable tip 2", "Actionable tip 3"]
       }
     `;
 
@@ -83,7 +89,7 @@ export const evaluateMockWriting = async (req: Request, res: Response): Promise<
     return res.status(200).json({
       success: true,
       bandScore: result.bandScore || 0,
-      feedback: result.feedback || "Evaluation completed."
+      feedback: result // 🚀 Pass the entire rich object so it saves to the DB
     });
 
   } catch (error) {
@@ -104,7 +110,6 @@ export const submitMockTest = async (req: Request, res: Response): Promise<void>
     }
 
     const userId = session.user.id; 
-    // 🚀 We now expect the testId from the frontend
     const { testId, sections, detailedReport } = req.body;
 
     if (!testId) {
@@ -119,7 +124,7 @@ export const submitMockTest = async (req: Request, res: Response): Promise<void>
     const s = sections?.speaking?.score || 0;
     const overallBand = Number(((r + l + w + s) / 4).toFixed(1));
 
-    // B. 🚀 UPDATE the existing test instead of creating a duplicate!
+    // B. UPDATE the existing test
     const updatedTest = await Mocktest.findByIdAndUpdate(
       testId,
       {
@@ -131,7 +136,7 @@ export const submitMockTest = async (req: Request, res: Response): Promise<void>
            updatedAt: new Date()
          }
       },
-      { new: true } // Returns the updated document
+      { new: true } 
     );
 
     // C. Update Dashboard Activity
@@ -149,7 +154,7 @@ export const submitMockTest = async (req: Request, res: Response): Promise<void>
 };
 
 /**
- * 5. Get Single Test Details (For the "View Result" page)
+ * 5. Get Single Test Details
  */
 export const getMockTestById = async (req: Request, res: Response) => {
   try {
@@ -162,7 +167,6 @@ export const getMockTestById = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: "Test not found" });
     }
 
-    // Security: Only allow the owner to see their result
     if (test.userId.toString() !== session.user.id) {
         return res.status(403).json({ success: false, message: "Access denied" });
     }
