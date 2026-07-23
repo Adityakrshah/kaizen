@@ -18,7 +18,7 @@
 //   useEffect(() => {
 //     async function fetchTest() {
 //       try {
-//         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/mocktest/${id}`, { credentials: "include" });
+//         const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/mocktest/${id}`, { credentials: "include" });
 //         const result = await res.json();
 //         if (result.success) setTest(result.data);
 //       } catch (err) {
@@ -197,7 +197,7 @@ export default function MockTestResult() {
   useEffect(() => {
     async function fetchTest() {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/mocktest/${id}`, { credentials: "include" });
+        const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/mocktest/${id}`, { credentials: "include" });
         const result = await res.json();
         if (result.success) setTest(result.data);
       } catch (err) {

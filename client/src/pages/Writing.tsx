@@ -48,7 +48,7 @@
 //     setStatus("submitting");
 
 //     try {
-//       const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/writing/submit`, {
+//       const res = await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/writing/submit`, {
 //         content,
 //         prompt: activePrompt,
 //         taskType
@@ -302,7 +302,7 @@ export function Writing() {
     setStatus("submitting");
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/writing/submit`, {
+      const res = await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/writing/submit`, {
         content,
         prompt: activePrompt,
         taskType

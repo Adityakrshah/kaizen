@@ -61,7 +61,7 @@ export function Settings() {
         }
 
         // Sync Study Preferences
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/settings`, { 
+        const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/settings`, { 
           credentials: "include" 
         });
         const result = await res.json();
@@ -112,7 +112,7 @@ export function Settings() {
         });
 
         // Step C: Update Study Profile
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/settings`, {
+        const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/settings`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           credentials: "include", 

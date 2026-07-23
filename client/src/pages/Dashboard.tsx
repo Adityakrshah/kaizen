@@ -25,7 +25,7 @@ export function Dashboard() {
   useEffect(() => {
     async function fetchDashboardData() {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/progress/dashboard`, { 
+        const res = await fetch(`${import.meta.env.VITE_SERVER_URL}/api/progress/dashboard`, { 
           credentials: "include" 
         });
         const result = await res.json();
