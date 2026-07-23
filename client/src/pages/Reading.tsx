@@ -30,7 +30,7 @@
 //   const fetchLibrary = async () => {
 //     try {
 //       setIsLoading(true);
-//       const res = await axios.get(`${import.meta.env.VITE_SERVER_URL}/api/reading`, { withCredentials: true });
+//       const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/reading`, { withCredentials: true });
 //       if (res.data.success) setPassages(res.data.data);
 //     } catch (error) {
 //       console.error("Failed to fetch library", error);
@@ -58,7 +58,7 @@
 //   const generateNewTest = async () => {
 //     try {
 //       setIsGenerating(true);
-//       const res = await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/reading/generate`, {}, { withCredentials: true });
+//       const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/reading/generate`, {}, { withCredentials: true });
 //       if (res.data.success) {
 //         await fetchLibrary(); 
 //         selectPassage(res.data.data._id); 
@@ -72,7 +72,7 @@
 
 //   const selectPassage = async (id: string) => {
 //     try {
-//       const res = await axios.get(`${import.meta.env.VITE_SERVER_URL}/api/reading/${id}`, { withCredentials: true });
+//       const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/reading/${id}`, { withCredentials: true });
 //       if (res.data.success) {
 //         setActiveTest(res.data.data);
 //         setAnswers(new Array(res.data.data.questions?.length || 0).fill(""));
@@ -87,7 +87,7 @@
 //   const generateQuestionsForPassage = async () => {
 //     try {
 //       setIsGeneratingQs(true);
-//       const res = await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/reading/${activeTest._id}/questions`, {}, { withCredentials: true });
+//       const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/reading/${activeTest._id}/questions`, {}, { withCredentials: true });
 //       if (res.data.success) {
 //         setActiveTest(res.data.data);
 //         setAnswers(new Array(res.data.data.questions.length).fill(""));
@@ -109,7 +109,7 @@
 //   const finishTest = async () => {
 //     setTestStatus("finished");
 //     try {
-//       const res = await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/reading/submit`, {
+//       const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/reading/submit`, {
 //         passageId: activeTest._id,
 //         answers: answers
 //       }, { withCredentials: true });
@@ -383,7 +383,7 @@ export function Reading() {
   const fetchLibrary = async () => {
     try {
       setIsLoading(true);
-      const res = await axios.get(`${import.meta.env.VITE_SERVER_URL}/api/reading`, { withCredentials: true });
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/reading`, { withCredentials: true });
       if (res.data.success) setPassages(res.data.data);
     } catch (error) {
       console.error("Failed to fetch library", error);
@@ -411,7 +411,7 @@ export function Reading() {
   const generateNewTest = async () => {
     try {
       setIsGenerating(true);
-      const res = await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/reading/generate`, {}, { withCredentials: true });
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/reading/generate`, {}, { withCredentials: true });
       if (res.data.success) {
         await fetchLibrary(); 
         selectPassage(res.data.data._id); 
@@ -425,7 +425,7 @@ export function Reading() {
 
   const selectPassage = async (id: string) => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_SERVER_URL}/api/reading/${id}`, { withCredentials: true });
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/reading/${id}`, { withCredentials: true });
       if (res.data.success) {
         setActiveTest(res.data.data);
         setAnswers(new Array(res.data.data.questions?.length || 0).fill(""));
@@ -440,7 +440,7 @@ export function Reading() {
   const generateQuestionsForPassage = async () => {
     try {
       setIsGeneratingQs(true);
-      const res = await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/reading/${activeTest._id}/questions`, {}, { withCredentials: true });
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/reading/${activeTest._id}/questions`, {}, { withCredentials: true });
       if (res.data.success) {
         setActiveTest(res.data.data);
         setAnswers(new Array(res.data.data.questions.length).fill(""));
@@ -462,7 +462,7 @@ export function Reading() {
   const finishTest = async () => {
     setTestStatus("finished");
     try {
-      const res = await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/reading/submit`, {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/reading/submit`, {
         passageId: activeTest._id,
         answers: answers
       }, { withCredentials: true });

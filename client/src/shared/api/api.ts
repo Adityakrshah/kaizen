@@ -1,8 +1,8 @@
 /// <reference types="vite/client" />
 
 // 1. Keep the base URL as just the server root (http://localhost:5000)
-// Check your .env: VITE_SERVER_URL should be "http://localhost:5000"
-const BASE_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:5000";
+// Check your .env: VITE_API_URL should be "http://localhost:5000"
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 type ApiOptions = {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
