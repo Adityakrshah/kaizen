@@ -4,7 +4,7 @@ import {
   Lock, EyeOff, CheckCircle2, BarChart3, 
   Sparkles, Skull, Loader2, 
   Mic, Wifi, MonitorCheck, PlayCircle, ChevronRight,
-  Headphones, FileText, Mic2, Square, Play
+  Headphones, FileText, Mic2, Square
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -81,7 +81,7 @@ export function MockTest() {
     try {
       if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
       try {
-        const res = await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/mocktest/start`, {}, { withCredentials: true });
+        const res = await axios.post(`/api/mocktest/start`, {}, { withCredentials: true });
         if (res.data.success) {
           setTestId(res.data.data._id);
           setExamBundle(res.data.bundle); 
@@ -100,7 +100,7 @@ export function MockTest() {
   const syncTestStatus = async (status: string, currentWarnings: number, reason: string = "") => {
     if (!testId) return;
     try {
-      await axios.patch(`${import.meta.env.VITE_SERVER_URL}/api/mocktest/update`, { testId, status, warnings: currentWarnings, terminationReason: reason }, { withCredentials: true });
+      await axios.patch(`/api/mocktest/update`, { testId, status, warnings: currentWarnings, terminationReason: reason }, { withCredentials: true });
     } catch (err) {}
   };
 
@@ -130,7 +130,7 @@ export function MockTest() {
       let writingBand = 0;
       let currentAiFeedback = aiFeedback;
       try {
-        const evalRes = await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/mocktest/evaluate-writing`, {
+        const evalRes = await axios.post(`/api/mocktest/evaluate-writing`, {
           task1Response: testAnswers.writing.task1,
           task2Response: testAnswers.writing.task2,
           prompts: examBundle?.writing
@@ -163,7 +163,7 @@ export function MockTest() {
       setFinalScores(calculatedScores);
 
       if (testId) {
-        await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/mocktest/submit`, {
+        await axios.post(`/api/mocktest/submit`, {
           testId,
           sections: {
             listening: { score: listeningBand || 0 },
@@ -314,7 +314,7 @@ export function MockTest() {
         <div className="flex-1 w-full space-y-2">
           <h3 className="font-bold text-base sm:text-lg">Section 1 Audio</h3>
           <audio 
-            src={`${import.meta.env.VITE_SERVER_URL}${examBundle?.listening?.audioUrl?.replace(/^\//, '')}`} 
+            src={examBundle?.listening?.audioUrl} 
             controls 
             controlsList="nodownload" 
             className="w-full h-10" 
