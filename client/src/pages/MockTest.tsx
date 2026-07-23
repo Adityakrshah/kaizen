@@ -13,6 +13,46 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import axios from "axios";
 
+// --- TYPESCRIPT INTERFACES ---
+interface Question {
+  question?: string;
+  text?: string;
+  prompt?: string;
+  type: string;
+  correctAnswer?: string;
+  options?: string[];
+}
+
+interface Passage {
+  title?: string;
+  passage?: string;
+  text?: string;
+  questions?: Question[];
+}
+
+interface ExamBundle {
+  listening?: {
+    audioUrl?: string;
+    questions?: Question[];
+  };
+  reading?: Passage[] | { passages?: Passage[]; text?: string };
+  writing?: {
+    task1?: string;
+    task2?: string;
+  };
+  speaking?: {
+    part2?: string;
+  };
+}
+
+interface TestScores {
+  listening: number;
+  reading: number;
+  writing: number;
+  speaking: number;
+  overallBand: number;
+}
+
 const SECTIONS = [
   { id: "listening", name: "Listening", duration: 30 * 60, description: "4 parts, 40 questions. Audio plays only once." },
   { id: "reading", name: "Reading", duration: 60 * 60, description: "3 reading passages, 40 questions." },
@@ -26,14 +66,14 @@ export function MockTest() {
   const [timeLeft, setTimeLeft] = useState(0);
   
   const [testId, setTestId] = useState<string | null>(null);
-  const [examBundle, setExamBundle] = useState<any>(null); 
+  const [examBundle, setExamBundle] = useState<ExamBundle | null>(null); 
   
   // CENTRALIZED ANSWER TRACKING
   const [testAnswers, setTestAnswers] = useState({
     listening: {} as Record<string, string>,
     reading: {} as Record<string, string>,
     writing: { task1: "", task2: "" },
-    speaking: { audioUrl: null as string | null } 
+    speaking: { audioUrl: null as string | null, blob: null as Blob | null } 
   });
 
   // UI States
@@ -42,10 +82,12 @@ export function MockTest() {
   // Speaking Recorder States
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<BlobPart[]>([]);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
   
   // Grading States
   const [isGrading, setIsGrading] = useState(false);
-  const [finalScores, setFinalScores] = useState<any>(null);
+  const [finalScores, setFinalScores] = useState<TestScores | null>(null);
   const [aiFeedback, setAiFeedback] = useState<string>("");
   
   const [warnings, setWarnings] = useState(0);
@@ -106,53 +148,71 @@ export function MockTest() {
 
   // --- GRADING ENGINE ---
   const submitAndGradeExam = async () => {
+    if (isGrading || testState === "completed") return; // Prevent duplicate submissions
     setIsGrading(true);
     setTestState("completed"); 
 
     try {
+      // 1. Listening Calculation
       let listeningCorrect = 0;
-      let listeningTotal = examBundle?.listening?.questions?.length || 1;
-      examBundle?.listening?.questions?.forEach((q: any, i: number) => {
+      const listeningQuestions = examBundle?.listening?.questions || [];
+      const listeningTotal = listeningQuestions.length || 1;
+      listeningQuestions.forEach((q, i) => {
         if (testAnswers.listening[i] === q.correctAnswer) listeningCorrect++;
       });
       const listeningBand = Math.round((listeningCorrect / listeningTotal) * 9 * 2) / 2;
 
+      // 2. Reading Calculation (Robust Structure Resolver)
       let readingCorrect = 0;
       let readingTotal = 0;
-      examBundle?.reading?.forEach((passage: any, pIdx: number) => {
-        passage.questions?.forEach((q: any, qIdx: number) => {
+      const rawReading = examBundle?.reading;
+      const readingPassages: Passage[] = Array.isArray(rawReading) 
+        ? rawReading 
+        : (rawReading?.passages || []);
+
+      readingPassages.forEach((passage, pIdx) => {
+        passage.questions?.forEach((q, qIdx) => {
           readingTotal++;
           if (testAnswers.reading[`${pIdx}_${qIdx}`] === q.correctAnswer) readingCorrect++;
         });
       });
       const readingBand = readingTotal > 0 ? Math.round((readingCorrect / readingTotal) * 9 * 2) / 2 : 0;
 
+      // 3. Writing Evaluation (Ensuring skipped sections get 0)
       let writingBand = 0;
       let currentAiFeedback = aiFeedback;
-      try {
-        const evalRes = await axios.post(`/api/mocktest/evaluate-writing`, {
-          task1Response: testAnswers.writing.task1,
-          task2Response: testAnswers.writing.task2,
-          prompts: examBundle?.writing
-        }, { withCredentials: true });
-        
-        if (evalRes.data.success) {
-          writingBand = evalRes.data.bandScore;
-          currentAiFeedback = evalRes.data.feedback;
-          setAiFeedback(currentAiFeedback); 
+      const hasWrittenContent = testAnswers.writing.task1.trim().length > 0 || testAnswers.writing.task2.trim().length > 0;
+
+      if (hasWrittenContent) {
+        try {
+          const evalRes = await axios.post(`/api/mocktest/evaluate-writing`, {
+            task1Response: testAnswers.writing.task1,
+            task2Response: testAnswers.writing.task2,
+            prompts: examBundle?.writing
+          }, { withCredentials: true });
+          
+          if (evalRes.data.success) {
+            writingBand = evalRes.data.bandScore;
+            currentAiFeedback = evalRes.data.feedback;
+            setAiFeedback(currentAiFeedback); 
+          }
+        } catch (err) {
+          console.error("AI Writing evaluation failed", err);
+          writingBand = testAnswers.writing.task2.length > 50 ? 5.5 : 3.0; 
+          currentAiFeedback = "AI evaluation failed due to a network error. Fallback score applied based on word count.";
+          setAiFeedback(currentAiFeedback);
         }
-      } catch (err) {
-        console.error("AI Writing evaluation failed", err);
-        writingBand = testAnswers.writing.task2.length > 50 ? 5.5 : 0; 
-        currentAiFeedback = "AI evaluation failed due to a network error. Fallback score applied based on word count.";
+      } else {
+        currentAiFeedback = "No writing responses provided. Band score: 0";
         setAiFeedback(currentAiFeedback);
       }
 
+      // 4. Speaking Evaluation (Ensuring skipped speaking gets 0)
       const speakingBand = testAnswers.speaking.audioUrl ? 6.5 : 0; 
 
       const overallBand = (listeningBand + readingBand + writingBand + speakingBand) / 4;
 
-      const calculatedScores = {
+      const calculatedScores: TestScores = {
         listening: listeningBand || 0,
         reading: readingBand || 0,
         writing: writingBand || 0,
@@ -194,19 +254,23 @@ export function MockTest() {
     }
   };
 
-  // --- AUDIO RECORDING LOGIC ---
+  // --- AUDIO RECORDING & CLEANUP LOGIC ---
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
-      const chunks: BlobPart[] = [];
+      audioChunksRef.current = [];
       
-      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+      mediaRecorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' });
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const url = URL.createObjectURL(blob);
-        setTestAnswers(prev => ({ ...prev, speaking: { audioUrl: url } }));
+        setTestAnswers(prev => {
+          if (prev.speaking.audioUrl) URL.revokeObjectURL(prev.speaking.audioUrl);
+          return { ...prev, speaking: { audioUrl: url, blob } };
+        });
       };
 
       mediaRecorder.start();
@@ -217,9 +281,26 @@ export function MockTest() {
   };
 
   const stopRecording = () => {
-    mediaRecorderRef.current?.stop();
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+    }
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+    }
     setIsRecording(false);
   };
+
+  // Cleanup object URLs and Media streams on unmount
+  useEffect(() => {
+    return () => {
+      if (testAnswers.speaking.audioUrl) {
+        URL.revokeObjectURL(testAnswers.speaking.audioUrl);
+      }
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   // --- ANTI-CHEAT ---
   const handleVisibilityChange = useCallback(() => {
@@ -307,61 +388,73 @@ export function MockTest() {
 
   // 📝 --- INTERNAL EXAM RENDERERS ---
 
-  const renderListening = () => (
-    <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 animate-in fade-in duration-500 pb-10">
-      <Card className="p-4 sm:p-6 border-primary/20 bg-primary/5 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-        <Headphones className="h-10 w-10 sm:h-12 sm:w-12 text-primary shrink-0" />
-        <div className="flex-1 w-full space-y-2">
-          <h3 className="font-bold text-base sm:text-lg">Section 1 Audio</h3>
-          <audio 
-            src={examBundle?.listening?.audioUrl} 
-            controls 
-            controlsList="nodownload" 
-            className="w-full h-10" 
-          />
+  const renderListening = () => {
+    const rawAudioUrl = examBundle?.listening?.audioUrl || "";
+    // Correctly resolve audio URL using Render server root domain if it's a relative path
+    const audioSource = rawAudioUrl.startsWith("http") 
+      ? rawAudioUrl 
+      : `${import.meta.env.VITE_SERVER_URL || ""}${rawAudioUrl.startsWith('/') ? '' : '/'}${rawAudioUrl}`;
+
+    return (
+      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 animate-in fade-in duration-500 pb-10">
+        <Card className="p-4 sm:p-6 border-primary/20 bg-primary/5 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+          <Headphones className="h-10 w-10 sm:h-12 sm:w-12 text-primary shrink-0" />
+          <div className="flex-1 w-full space-y-2">
+            <h3 className="font-bold text-base sm:text-lg">Section 1 Audio</h3>
+            <audio 
+              src={audioSource} 
+              controls 
+              controlsList="nodownload" 
+              className="w-full h-10" 
+            />
+          </div>
+        </Card>
+        <div className="space-y-4 sm:space-y-6">
+          {examBundle?.listening?.questions?.map((q, i) => (
+            <Card key={i} className="p-4 sm:p-6">
+              <p className="font-medium mb-4 text-sm sm:text-base">{i + 1}. {q.question}</p>
+              
+              {q.type === "fill_blank" ? (
+                  <input 
+                    type="text"
+                    placeholder="Type your answer..."
+                    className="w-full sm:max-w-xs bg-background h-10 sm:h-11 px-3 text-sm sm:text-base border border-border/50 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    value={testAnswers.listening[i] || ""}
+                    onChange={(e) => setTestAnswers(p => ({ ...p, listening: { ...p.listening, [i]: e.target.value } }))}
+                  />
+              ) : (
+                <div className="space-y-3">
+                  {(q.options || []).map((opt, j) => (
+                    <label key={j} className="flex items-start sm:items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors">
+                      <input type="radio" name={`list_q${i}`} className="w-4 h-4 mt-0.5 sm:mt-0 text-primary shrink-0" 
+                        checked={testAnswers.listening[i] === opt}
+                        onChange={() => setTestAnswers(p => ({ ...p, listening: { ...p.listening, [i]: opt } }))}
+                      />
+                      <span className="text-sm sm:text-base">{opt}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </Card>
+          ))}
         </div>
-      </Card>
-      <div className="space-y-4 sm:space-y-6">
-        {examBundle?.listening?.questions?.map((q: any, i: number) => (
-          <Card key={i} className="p-4 sm:p-6">
-            <p className="font-medium mb-4 text-sm sm:text-base">{i + 1}. {q.question}</p>
-            
-            {q.type === "fill_blank" ? (
-                <input 
-                  type="text"
-                  placeholder="Type your answer..."
-                  className="w-full sm:max-w-xs bg-background h-10 sm:h-11 px-3 text-sm sm:text-base border border-border/50 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  value={testAnswers.listening[i] || ""}
-                  onChange={(e) => setTestAnswers(p => ({ ...p, listening: { ...p.listening, [i]: e.target.value } }))}
-                />
-            ) : (
-              <div className="space-y-3">
-                {(q.options || []).map((opt: string, j: number) => (
-                  <label key={j} className="flex items-start sm:items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors">
-                    <input type="radio" name={`list_q${i}`} className="w-4 h-4 mt-0.5 sm:mt-0 text-primary shrink-0" 
-                      checked={testAnswers.listening[i] === opt}
-                      onChange={() => setTestAnswers(p => ({ ...p, listening: { ...p.listening, [i]: opt } }))}
-                    />
-                    <span className="text-sm sm:text-base">{opt}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </Card>
-        ))}
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderReading = () => {
-    const readingData = examBundle?.reading?.passages || examBundle?.readingData || examBundle?.reading;
-    const passage = Array.isArray(readingData) ? readingData[activeReadingPassage] : readingData;
-    const questionsList = passage?.questions || passage?.Questions || [];
+    const rawReading = examBundle?.reading;
+    const passagesList: Passage[] = Array.isArray(rawReading) 
+      ? rawReading 
+      : (rawReading?.passages || []);
+    
+    const passage = passagesList[activeReadingPassage];
+    const questionsList = passage?.questions || [];
 
     return (
       <div className="flex flex-col h-full animate-in fade-in duration-500 pb-10">
         <div className="flex flex-wrap gap-2 mb-4 shrink-0">
-          {Array.isArray(readingData) && readingData.map((_: any, idx: number) => (
+          {passagesList.map((_, idx) => (
             <Button 
               key={idx} 
               variant={activeReadingPassage === idx ? "default" : "outline"} 
@@ -391,8 +484,8 @@ export function MockTest() {
             )}
 
             <div className="space-y-6">
-              {questionsList.map((q: any, i: number) => {
-                const optionsList = q.options || q.Options || q.choices || [];
+              {questionsList.map((q, i) => {
+                const optionsList = q.options || [];
                 const questionText = q.question || q.text || q.prompt;
                 
                 return (
@@ -409,7 +502,7 @@ export function MockTest() {
                       />
                     ) : (
                       <div className="space-y-2.5 sm:space-y-3 pl-1 sm:pl-2">
-                        {(q.type === "true_false_not_given" ? ["TRUE", "FALSE", "NOT GIVEN"] : optionsList).map((opt: string, j: number) => (
+                        {(q.type === "true_false_not_given" ? ["TRUE", "FALSE", "NOT GIVEN"] : optionsList).map((opt, j) => (
                           <label key={j} className="flex items-start sm:items-center gap-3 p-3 rounded-lg border bg-card cursor-pointer hover:border-primary transition-colors text-xs sm:text-sm">
                             <input 
                               type="radio" 
@@ -490,7 +583,10 @@ export function MockTest() {
                 <p className="text-xs text-muted-foreground mb-4">Playback your audio to confirm quality.</p>
                 <audio src={testAnswers.speaking.audioUrl} controls className="w-full h-12" />
               </div>
-              <Button variant="outline" onClick={() => setTestAnswers(p => ({ ...p, speaking: { audioUrl: null } }))} className="text-xs sm:text-sm">
+              <Button variant="outline" onClick={() => setTestAnswers(p => {
+                if (p.speaking.audioUrl) URL.revokeObjectURL(p.speaking.audioUrl);
+                return { ...p, speaking: { audioUrl: null, blob: null } };
+              })} className="text-xs sm:text-sm">
                 Rerecord Response
               </Button>
             </div>
@@ -568,9 +664,9 @@ export function MockTest() {
         </div>
       )}
 
-      {/* 2. RESULTS & TERMINATION */}
+      {/* 2. RESULTS & TERMINATION (FIXED BLANK SCREEN ISSUE) */}
       {(testState === "terminated" || testState === "completed") && (
-        <div className="flex-1 overflow-y-auto w-full">
+        <div className="flex-1 overflow-y-auto w-full h-full bg-background z-[100] relative">
           {isGrading ? (
             <div className="flex flex-col items-center justify-center h-full animate-in fade-in duration-500 mt-20 sm:mt-32 px-4 text-center">
               <Loader2 className="h-16 w-16 sm:h-20 sm:w-20 text-primary animate-spin mb-6 sm:mb-8" />
